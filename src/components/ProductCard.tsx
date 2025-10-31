@@ -1,6 +1,5 @@
 import { Product } from "@/types/product";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
@@ -10,38 +9,37 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product, isSelected, onToggle }: ProductCardProps) => {
   return (
-    <button
+    <div
       onClick={onToggle}
-      className={cn(
-        "relative bg-card rounded-xl overflow-hidden shadow-sm transition-all duration-200 active:scale-95",
-        "border-2",
+      className={`group relative cursor-pointer rounded-lg overflow-hidden transition-all duration-300 border ${
         isSelected 
-          ? "border-primary shadow-lg ring-2 ring-primary/20" 
-          : "border-transparent hover:border-muted"
-      )}
+          ? "ring-2 ring-primary shadow-xl scale-[1.02] border-primary" 
+          : "border-border hover:border-primary/50 hover:shadow-lg"
+      }`}
     >
-      {/* Selection indicator */}
-      {isSelected && (
-        <div className="absolute top-2 right-2 z-10 bg-primary text-primary-foreground rounded-full p-1.5 shadow-md">
-          <Check className="h-5 w-5" />
-        </div>
-      )}
-      
-      {/* Product image */}
-      <div className="aspect-square overflow-hidden bg-muted">
-        <img 
-          src={product.image} 
+      <div className="aspect-square relative bg-muted">
+        <img
+          src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+          loading="lazy"
         />
+        {isSelected && (
+          <div className="absolute inset-0 bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
+            <div className="bg-primary rounded-full p-2.5 shadow-lg">
+              <Check className="h-5 w-5 text-primary-foreground" strokeWidth={3} />
+            </div>
+          </div>
+        )}
       </div>
-      
-      {/* Product name */}
-      <div className="p-4">
-        <h3 className="font-semibold text-lg text-card-foreground text-center">
+      <div className="p-3 bg-card">
+        <h3 className="font-medium text-sm text-foreground truncate">
           {product.name}
         </h3>
+        {product.price && (
+          <p className="text-xs text-muted-foreground mt-1">{product.price}</p>
+        )}
       </div>
-    </button>
+    </div>
   );
 };

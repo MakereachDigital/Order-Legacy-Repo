@@ -1,13 +1,17 @@
 import { Product } from "@/types/product";
 import { Check } from "lucide-react";
+import { ViewMode } from "./ViewToggle";
 
 interface ProductCardProps {
   product: Product;
   isSelected: boolean;
   onToggle: () => void;
+  viewMode?: ViewMode;
 }
 
-export const ProductCard = ({ product, isSelected, onToggle }: ProductCardProps) => {
+export const ProductCard = ({ product, isSelected, onToggle, viewMode = "medium" }: ProductCardProps) => {
+  const isListView = viewMode === "list";
+  
   return (
     <div
       onClick={onToggle}
@@ -15,9 +19,9 @@ export const ProductCard = ({ product, isSelected, onToggle }: ProductCardProps)
         isSelected 
           ? "ring-2 ring-primary shadow-xl scale-[1.02] border-primary" 
           : "border-border hover:border-primary/50 hover:shadow-lg"
-      }`}
+      } ${isListView ? "flex flex-row items-center" : ""}`}
     >
-      <div className="aspect-square relative bg-muted">
+      <div className={`${isListView ? "w-28 h-28 flex-shrink-0" : "aspect-square"} relative bg-muted`}>
         <img
           src={product.image}
           alt={product.name}
@@ -32,12 +36,12 @@ export const ProductCard = ({ product, isSelected, onToggle }: ProductCardProps)
           </div>
         )}
       </div>
-      <div className="p-3 bg-card">
-        <h3 className="font-medium text-sm text-foreground truncate">
+      <div className={`p-3 bg-card ${isListView ? "flex-1" : ""}`}>
+        <h3 className={`font-medium ${isListView ? "text-base" : "text-sm"} text-foreground ${isListView ? "line-clamp-1" : "truncate"}`}>
           {product.name}
         </h3>
         {product.price && (
-          <p className="text-xs text-muted-foreground mt-1">{product.price}</p>
+          <p className={`${isListView ? "text-sm" : "text-xs"} text-muted-foreground mt-1`}>{product.price}</p>
         )}
       </div>
     </div>

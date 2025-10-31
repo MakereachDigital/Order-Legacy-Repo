@@ -5,6 +5,7 @@ import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
 import { AddProductDialog } from "@/components/AddProductDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { Button } from "@/components/ui/button";
 import { ImageIcon, Package } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ const Index = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showGenerator, setShowGenerator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("medium");
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
@@ -82,6 +84,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
               <AddProductDialog onAddProduct={handleAddProduct} />
               {selectedIds.size > 0 && (
                 <Button
@@ -110,6 +113,7 @@ const Index = () => {
             products={filteredProducts}
             selectedIds={selectedIds}
             onToggleProduct={handleToggleProduct}
+            viewMode={viewMode}
           />
         )}
       </main>

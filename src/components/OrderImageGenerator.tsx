@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from "react";
 import { Product } from "@/types/product";
-import { Download, X } from "lucide-react";
+import { Download, X, Share2 } from "lucide-react";
 import { Button } from "./ui/button";
+import { toast } from "sonner";
 
 interface OrderImageGeneratorProps {
   selectedProducts: Product[];
@@ -28,7 +29,7 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     const rows = Math.ceil(selectedProducts.length / itemsPerRow);
     const imgSize = 300;
     const padding = 20;
-    const textHeight = 60;
+    const textHeight = 80;
 
     canvas.width = itemsPerRow * imgSize + (itemsPerRow + 1) * padding;
     canvas.height = rows * (imgSize + textHeight) + (rows + 1) * padding;
@@ -37,13 +38,19 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Load and draw images
+    // Load and draw images using proxy to avoid CORS
     const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => resolve(img);
-        img.onerror = reject;
+        img.onerror = () => {
+          // Fallback: try without crossOrigin
+          const img2 = new Image();
+          img2.onload = () => resolve(img2);
+          img2.onerror = reject;
+          img2.src = src;
+        };
         img.src = src;
       });
     };
@@ -76,13 +83,23 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
 
         // Draw text
         ctx.fillStyle = "#1f2937";
-        ctx.font = "bold 24px system-ui, -apple-system, sans-serif";
+        ctx.font = "bold 20px system-ui, -apple-system, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(
-          selectedProducts[index].name,
-          x + imgSize / 2,
-          y + imgSize + 40
-        );
+        
+        // Product name
+        const name = selectedProducts[index].name;
+        ctx.fillText(name, x + imgSize / 2, y + imgSize + 30);
+        
+        // Price
+        if (selectedProducts[index].price) {
+          ctx.font = "16px system-ui, -apple-system, sans-serif";
+          ctx.fillStyle = "#059669";
+          ctx.fillText(
+            selectedProducts[index].price!,
+            x + imgSize / 2,
+            y + imgSize + 55
+          );
+        }
       });
 
       // Convert to blob and create URL
@@ -102,6 +119,35 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     link.download = `order-${Date.now()}.png`;
     link.href = imageUrl;
     link.click();
+    toast.success("Image downloaded successfully!");
+  };
+
+  const handleShare = async () => {
+    try {
+      // Convert data URL to blob
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
+
+      // Check if Web Share API is available
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Order Image",
+          text: `Order with ${selectedProducts.length} items`,
+        });
+        toast.success("Shared successfully!");
+      } else {
+        // Fallback: Open messenger with text
+        const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
+        const messengerUrl = `https://www.facebook.com/messages/t/?text=${encodeURIComponent(text)}`;
+        window.open(messengerUrl, "_blank");
+        toast.info("Please share the downloaded image manually in Messenger");
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast.error("Could not share. Please download and share manually.");
+    }
   };
 
   return (
@@ -134,7 +180,16 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
             size="lg"
           >
             <Download className="mr-2 h-5 w-5" />
-            Download Image
+            Download
+          </Button>
+          <Button 
+            onClick={handleShare} 
+            className="flex-1"
+            size="lg"
+            variant="secondary"
+          >
+            <Share2 className="mr-2 h-5 w-5" />
+            Share
           </Button>
         </div>
 

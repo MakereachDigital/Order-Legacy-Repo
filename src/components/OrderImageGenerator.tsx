@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Product } from "@/types/product";
-import { Download, X, Share2 } from "lucide-react";
+import { Download, X, MessageCircle, Send } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 
@@ -122,31 +122,63 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     toast.success("Image downloaded successfully!");
   };
 
-  const handleShare = async () => {
+  const handleWhatsAppShare = async () => {
     try {
-      // Convert data URL to blob
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const file = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
 
-      // Check if Web Share API is available
+      // Try Web Share API first (works on mobile)
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Order Image",
-          text: `Order with ${selectedProducts.length} items`,
+          text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
         });
-        toast.success("Shared successfully!");
+        toast.success("Opening WhatsApp...");
       } else {
-        // Fallback: Open messenger with text
+        // Fallback: Open WhatsApp Web with text
+        const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(whatsappUrl, "_blank");
+        toast.info("Please share the downloaded image in WhatsApp");
+      }
+    } catch (error) {
+      console.error("Error sharing to WhatsApp:", error);
+      const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(whatsappUrl, "_blank");
+      toast.info("Please share the downloaded image in WhatsApp");
+    }
+  };
+
+  const handleMessengerShare = async () => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
+
+      // Try Web Share API first (works on mobile)
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Order Image",
+          text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
+        });
+        toast.success("Opening Messenger...");
+      } else {
+        // Fallback: Open Messenger
         const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
         const messengerUrl = `https://www.facebook.com/messages/t/?text=${encodeURIComponent(text)}`;
         window.open(messengerUrl, "_blank");
-        toast.info("Please share the downloaded image manually in Messenger");
+        toast.info("Please share the downloaded image in Messenger");
       }
     } catch (error) {
-      console.error("Error sharing:", error);
-      toast.error("Could not share. Please download and share manually.");
+      console.error("Error sharing to Messenger:", error);
+      const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
+      const messengerUrl = `https://www.facebook.com/messages/t/?text=${encodeURIComponent(text)}`;
+      window.open(messengerUrl, "_blank");
+      toast.info("Please share the downloaded image in Messenger");
     }
   };
 
@@ -173,24 +205,35 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
         </div>
 
         {/* Actions */}
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex flex-col gap-3">
           <Button 
             onClick={handleDownload} 
-            className="flex-1"
+            className="w-full"
             size="lg"
           >
             <Download className="mr-2 h-5 w-5" />
             Download
           </Button>
-          <Button 
-            onClick={handleShare} 
-            className="flex-1"
-            size="lg"
-            variant="secondary"
-          >
-            <Share2 className="mr-2 h-5 w-5" />
-            Share
-          </Button>
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleWhatsAppShare} 
+              className="flex-1"
+              size="lg"
+              variant="secondary"
+            >
+              <Send className="mr-2 h-5 w-5" />
+              WhatsApp
+            </Button>
+            <Button 
+              onClick={handleMessengerShare} 
+              className="flex-1"
+              size="lg"
+              variant="secondary"
+            >
+              <MessageCircle className="mr-2 h-5 w-5" />
+              Messenger
+            </Button>
+          </div>
         </div>
 
         {/* Hidden canvas */}

@@ -4,12 +4,19 @@ import { ViewMode } from "./ViewToggle";
 
 interface ProductGridProps {
   products: Product[];
-  selectedIds: Set<string>;
-  onToggleProduct: (id: string) => void;
+  selectedProducts: Product[];
+  onToggleProduct: (product: Product) => void;
+  getSelectionNumbers: (productId: string) => number[];
   viewMode: ViewMode;
 }
 
-export const ProductGrid = ({ products, selectedIds, onToggleProduct, viewMode }: ProductGridProps) => {
+export const ProductGrid = ({ 
+  products, 
+  selectedProducts, 
+  onToggleProduct, 
+  getSelectionNumbers,
+  viewMode 
+}: ProductGridProps) => {
   const getGridClasses = () => {
     if (viewMode === "list") {
       return "flex flex-col gap-3 p-4";
@@ -29,15 +36,18 @@ export const ProductGrid = ({ products, selectedIds, onToggleProduct, viewMode }
 
   return (
     <div className={getGridClasses()}>
-      {products.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          isSelected={selectedIds.has(product.id)}
-          onToggle={() => onToggleProduct(product.id)}
-          viewMode={viewMode}
-        />
-      ))}
+      {products.map((product) => {
+        const selectionNumbers = getSelectionNumbers(product.id);
+        return (
+          <ProductCard
+            key={product.id}
+            product={product}
+            selectionNumbers={selectionNumbers}
+            onToggle={() => onToggleProduct(product)}
+            viewMode={viewMode}
+          />
+        );
+      })}
     </div>
   );
 };

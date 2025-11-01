@@ -13,7 +13,7 @@ import { Product } from "@/types/product";
 
 const Index = () => {
   const [products, setProducts] = useState<Product[]>(legacyProducts);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [showGenerator, setShowGenerator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("medium");
@@ -25,20 +25,16 @@ const Index = () => {
     );
   }, [products, searchQuery]);
 
-  const handleToggleProduct = (id: string) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
+  const handleToggleProduct = (product: Product) => {
+    setSelectedProducts((prev) => [...prev, product]);
+  };
+
+  const handleRemoveSelection = (index: number) => {
+    setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleGenerateImage = () => {
-    if (selectedIds.size === 0) {
+    if (selectedProducts.length === 0) {
       toast.error("Please select at least one product");
       return;
     }
@@ -46,15 +42,19 @@ const Index = () => {
   };
 
   const handleClearSelection = () => {
-    setSelectedIds(new Set());
+    setSelectedProducts([]);
     toast.success("Selection cleared");
+  };
+
+  const getSelectionNumbers = (productId: string): number[] => {
+    return selectedProducts
+      .map((p, index) => (p.id === productId ? index + 1 : -1))
+      .filter((num) => num !== -1);
   };
 
   const handleAddProduct = (product: Product) => {
     setProducts((prev) => [...prev, product]);
   };
-
-  const selectedProducts = products.filter((p) => selectedIds.has(p.id));
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,13 +86,13 @@ const Index = () => {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
               <AddProductDialog onAddProduct={handleAddProduct} />
-              {selectedIds.size > 0 && (
+              {selectedProducts.length > 0 && (
                 <Button
                   onClick={handleClearSelection}
                   variant="ghost"
                   size="sm"
                 >
-                  Clear ({selectedIds.size})
+                  Clear ({selectedProducts.length})
                 </Button>
               )}
             </div>
@@ -111,24 +111,46 @@ const Index = () => {
         ) : (
           <ProductGrid
             products={filteredProducts}
-            selectedIds={selectedIds}
+            selectedProducts={selectedProducts}
             onToggleProduct={handleToggleProduct}
+            getSelectionNumbers={getSelectionNumbers}
             viewMode={viewMode}
           />
         )}
       </main>
 
-      {/* Bottom Action Bar */}
-      {selectedIds.size > 0 && (
+      {/* Bottom Action Bar with Thumbnails */}
+      {selectedProducts.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-t border-border shadow-lg">
-          <div className="container mx-auto px-4 py-3">
+          <div className="container mx-auto px-4 py-3 space-y-3">
+            {/* Thumbnail Strip */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+              {selectedProducts.map((product, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleRemoveSelection(index)}
+                  className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-primary cursor-pointer hover:opacity-75 transition-opacity"
+                >
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-bl-lg flex items-center justify-center">
+                    {index + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Generate Button */}
             <Button
               onClick={handleGenerateImage}
               className="w-full"
               size="lg"
             >
               <ImageIcon className="mr-2 h-5 w-5" />
-              Generate Order Image ({selectedIds.size} items)
+              Generate Order Image ({selectedProducts.length} items)
             </Button>
           </div>
         </div>

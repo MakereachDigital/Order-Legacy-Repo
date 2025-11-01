@@ -1,16 +1,16 @@
 import { Product } from "@/types/product";
-import { Check } from "lucide-react";
 import { ViewMode } from "./ViewToggle";
 
 interface ProductCardProps {
   product: Product;
-  isSelected: boolean;
+  selectionNumbers: number[];
   onToggle: () => void;
   viewMode?: ViewMode;
 }
 
-export const ProductCard = ({ product, isSelected, onToggle, viewMode = "medium" }: ProductCardProps) => {
+export const ProductCard = ({ product, selectionNumbers, onToggle, viewMode = "medium" }: ProductCardProps) => {
   const isListView = viewMode === "list";
+  const isSelected = selectionNumbers.length > 0;
   
   return (
     <div
@@ -29,9 +29,16 @@ export const ProductCard = ({ product, isSelected, onToggle, viewMode = "medium"
           loading="lazy"
         />
         {isSelected && (
-          <div className="absolute inset-0 bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
-            <div className="bg-primary rounded-full p-2.5 shadow-lg">
-              <Check className="h-5 w-5 text-primary-foreground" strokeWidth={3} />
+          <div className="absolute inset-0 bg-primary/10 backdrop-blur-[1px]">
+            <div className="absolute top-2 right-2 flex flex-wrap gap-1 max-w-[80%] justify-end">
+              {selectionNumbers.map((num) => (
+                <div 
+                  key={num}
+                  className="bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow-lg"
+                >
+                  {num}
+                </div>
+              ))}
             </div>
           </div>
         )}

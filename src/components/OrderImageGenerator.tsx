@@ -40,33 +40,37 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Load images with multiple fallback strategies
-    const loadImage = (src: string): Promise<HTMLImageElement> => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
+    // Load images as data URLs to avoid canvas tainting
+    const loadImage = async (src: string): Promise<HTMLImageElement> => {
+      try {
+        // Fetch the image as a blob
+        const response = await fetch(src);
+        const blob = await response.blob();
         
-        // Try with CORS first
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          console.log("Image loaded successfully:", src);
-          resolve(img);
-        };
-        img.onerror = (e) => {
-          console.error("Failed to load with CORS:", src, e);
-          // Fallback: try without crossOrigin
-          const img2 = new Image();
-          img2.onload = () => {
-            console.log("Image loaded without CORS:", src);
-            resolve(img2);
+        // Convert blob to data URL
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        
+        // Load the data URL into an image
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            console.log("Image loaded successfully:", src);
+            resolve(img);
           };
-          img2.onerror = (e2) => {
-            console.error("Failed to load image:", src, e2);
+          img.onerror = (e) => {
+            console.error("Failed to load image:", src, e);
             reject(new Error(`Failed to load image: ${src}`));
           };
-          img2.src = src;
-        };
-        img.src = src;
-      });
+          img.src = dataUrl;
+        });
+      } catch (error) {
+        console.error("Failed to fetch image:", src, error);
+        throw new Error(`Failed to fetch image: ${src}`);
+      }
     };
 
     try {

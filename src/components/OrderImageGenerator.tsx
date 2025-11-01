@@ -14,7 +14,9 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
   const [imageUrl, setImageUrl] = useState<string>("");
 
   useEffect(() => {
-    generateOrderImage();
+    if (selectedProducts.length > 0) {
+      generateOrderImage();
+    }
   }, [selectedProducts]);
 
   const generateOrderImage = async () => {
@@ -38,17 +40,29 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Load and draw images using proxy to avoid CORS
+    // Load images with multiple fallback strategies
     const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
+        
+        // Try with CORS first
         img.crossOrigin = "anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = () => {
+        img.onload = () => {
+          console.log("Image loaded successfully:", src);
+          resolve(img);
+        };
+        img.onerror = (e) => {
+          console.error("Failed to load with CORS:", src, e);
           // Fallback: try without crossOrigin
           const img2 = new Image();
-          img2.onload = () => resolve(img2);
-          img2.onerror = reject;
+          img2.onload = () => {
+            console.log("Image loaded without CORS:", src);
+            resolve(img2);
+          };
+          img2.onerror = (e2) => {
+            console.error("Failed to load image:", src, e2);
+            reject(new Error(`Failed to load image: ${src}`));
+          };
           img2.src = src;
         };
         img.src = src;
@@ -56,9 +70,11 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     };
 
     try {
+      console.log("Starting to load images for", selectedProducts.length, "products");
       const images = await Promise.all(
         selectedProducts.map(product => loadImage(product.image))
       );
+      console.log("All images loaded successfully");
 
       images.forEach((img, index) => {
         const row = Math.floor(index / itemsPerRow);
@@ -106,15 +122,24 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
+          console.log("Image generated successfully, URL:", url);
           setImageUrl(url);
+        } else {
+          console.error("Failed to create blob from canvas");
+          toast.error("Failed to generate image");
         }
       }, "image/png");
     } catch (error) {
       console.error("Error generating order image:", error);
+      toast.error("Failed to generate order image. Please try again.");
     }
   };
 
   const handleDownload = () => {
+    if (!imageUrl) {
+      toast.error("Image not ready yet");
+      return;
+    }
     const link = document.createElement("a");
     link.download = `order-${Date.now()}.png`;
     link.href = imageUrl;
@@ -123,62 +148,81 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
   };
 
   const handleWhatsAppShare = async () => {
+    if (!imageUrl) {
+      toast.error("Image not ready yet");
+      return;
+    }
+
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const file = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
 
-      // Try Web Share API first (works on mobile)
+      // Try Web Share API first (works on mobile and some desktop browsers)
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Order Image",
           text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
         });
-        toast.success("Opening WhatsApp...");
+        toast.success("Sharing to WhatsApp...");
       } else {
-        // Fallback: Open WhatsApp Web with text
-        const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-        window.open(whatsappUrl, "_blank");
-        toast.info("Please share the downloaded image in WhatsApp");
+        // Desktop fallback: Download image and open WhatsApp Web
+        const link = document.createElement("a");
+        link.download = `order-${Date.now()}.png`;
+        link.href = imageUrl;
+        link.click();
+        
+        // Small delay to ensure download starts
+        setTimeout(() => {
+          const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
+          const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+          window.open(whatsappUrl, "_blank");
+          toast.success("Image downloaded! Please attach it in WhatsApp");
+        }, 500);
       }
     } catch (error) {
       console.error("Error sharing to WhatsApp:", error);
-      const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-      window.open(whatsappUrl, "_blank");
-      toast.info("Please share the downloaded image in WhatsApp");
+      toast.error("Failed to share. Please try the download button.");
     }
   };
 
   const handleMessengerShare = async () => {
+    if (!imageUrl) {
+      toast.error("Image not ready yet");
+      return;
+    }
+
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const file = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
 
-      // Try Web Share API first (works on mobile)
+      // Try Web Share API first (works on mobile and some desktop browsers)
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Order Image",
           text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
         });
-        toast.success("Opening Messenger...");
+        toast.success("Sharing to Messenger...");
       } else {
-        // Fallback: Open Messenger
-        const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
-        const messengerUrl = `https://www.facebook.com/messages/t/?text=${encodeURIComponent(text)}`;
-        window.open(messengerUrl, "_blank");
-        toast.info("Please share the downloaded image in Messenger");
+        // Desktop fallback: Download image and open Messenger
+        const link = document.createElement("a");
+        link.download = `order-${Date.now()}.png`;
+        link.href = imageUrl;
+        link.click();
+        
+        // Small delay to ensure download starts
+        setTimeout(() => {
+          const messengerUrl = `https://www.facebook.com/messages/t/`;
+          window.open(messengerUrl, "_blank");
+          toast.success("Image downloaded! Please attach it in Messenger");
+        }, 500);
       }
     } catch (error) {
       console.error("Error sharing to Messenger:", error);
-      const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
-      const messengerUrl = `https://www.facebook.com/messages/t/?text=${encodeURIComponent(text)}`;
-      window.open(messengerUrl, "_blank");
-      toast.info("Please share the downloaded image in Messenger");
+      toast.error("Failed to share. Please try the download button.");
     }
   };
 

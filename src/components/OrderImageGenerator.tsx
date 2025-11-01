@@ -40,19 +40,32 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Load images as data URLs to avoid canvas tainting
+    // Load images through proxy to avoid CORS
     const loadImage = async (src: string): Promise<HTMLImageElement> => {
       try {
-        // Fetch the image as a blob
-        const response = await fetch(src);
-        const blob = await response.blob();
+        console.log("Fetching image through proxy:", src);
         
-        // Convert blob to data URL
-        const dataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
+        // Use edge function proxy to fetch the image
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageUrl: src }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Proxy request failed: ${response.status}`);
+        }
+
+        const { dataUrl, error } = await response.json();
+        
+        if (error) {
+          throw new Error(error);
+        }
         
         // Load the data URL into an image
         return new Promise((resolve, reject) => {

@@ -56,6 +56,16 @@ const Index = () => {
     setProducts((prev) => [...prev, product]);
   };
 
+  const handleEditProduct = (updatedProduct: Product) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+    );
+    // Update selected products as well
+    setSelectedProducts((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -109,13 +119,14 @@ const Index = () => {
             <p className="text-sm text-muted-foreground">Try adjusting your search or add a custom product</p>
           </div>
         ) : (
-          <ProductGrid
-            products={filteredProducts}
-            selectedProducts={selectedProducts}
-            onToggleProduct={handleToggleProduct}
-            getSelectionNumbers={getSelectionNumbers}
-            viewMode={viewMode}
-          />
+        <ProductGrid
+          products={filteredProducts}
+          selectedProducts={selectedProducts}
+          onToggleProduct={handleToggleProduct}
+          onEditProduct={handleEditProduct}
+          getSelectionNumbers={getSelectionNumbers}
+          viewMode={viewMode}
+        />
         )}
       </main>
 

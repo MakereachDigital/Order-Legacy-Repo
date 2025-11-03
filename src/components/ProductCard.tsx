@@ -1,14 +1,16 @@
 import { Product } from "@/types/product";
 import { ViewMode } from "./ViewToggle";
+import { EditProductDialog } from "./EditProductDialog";
 
 interface ProductCardProps {
   product: Product;
   selectionNumbers: number[];
   onToggle: () => void;
+  onEdit: (updatedProduct: Product) => void;
   viewMode?: ViewMode;
 }
 
-export const ProductCard = ({ product, selectionNumbers, onToggle, viewMode = "medium" }: ProductCardProps) => {
+export const ProductCard = ({ product, selectionNumbers, onToggle, onEdit, viewMode = "medium" }: ProductCardProps) => {
   const isListView = viewMode === "list";
   const isSelected = selectionNumbers.length > 0;
   
@@ -21,6 +23,7 @@ export const ProductCard = ({ product, selectionNumbers, onToggle, viewMode = "m
           : "border-border hover:border-primary/50 hover:shadow-lg"
       } ${isListView ? "flex flex-row items-center" : ""}`}
     >
+      <EditProductDialog product={product} onEditProduct={onEdit} />
       <div className={`${isListView ? "w-28 h-28 flex-shrink-0" : "aspect-square"} relative bg-muted`}>
         <img
           src={product.image}
@@ -44,9 +47,16 @@ export const ProductCard = ({ product, selectionNumbers, onToggle, viewMode = "m
         )}
       </div>
       <div className={`p-3 bg-card ${isListView ? "flex-1" : ""}`}>
-        <h3 className={`font-medium ${isListView ? "text-base" : "text-sm"} text-foreground ${isListView ? "line-clamp-1" : "truncate"}`}>
-          {product.name}
-        </h3>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className={`font-medium ${isListView ? "text-base" : "text-sm"} text-foreground ${isListView ? "line-clamp-1" : "truncate"} flex-1`}>
+            {product.name}
+          </h3>
+          {product.sku && (
+            <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded shrink-0">
+              {product.sku}
+            </span>
+          )}
+        </div>
         {product.price && (
           <p className={`${isListView ? "text-sm" : "text-xs"} text-muted-foreground mt-1`}>{product.price}</p>
         )}

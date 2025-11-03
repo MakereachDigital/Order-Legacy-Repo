@@ -6,6 +6,7 @@ interface ProductGridProps {
   products: Product[];
   selectedProducts: Product[];
   onToggleProduct: (product: Product) => void;
+  onEditProduct: (updatedProduct: Product) => void;
   getSelectionNumbers: (productId: string) => number[];
   viewMode: ViewMode;
 }
@@ -13,7 +14,8 @@ interface ProductGridProps {
 export const ProductGrid = ({ 
   products, 
   selectedProducts, 
-  onToggleProduct, 
+  onToggleProduct,
+  onEditProduct, 
   getSelectionNumbers,
   viewMode 
 }: ProductGridProps) => {
@@ -44,6 +46,7 @@ export const ProductGrid = ({
             product={product}
             selectionNumbers={selectionNumbers}
             onToggle={() => onToggleProduct(product)}
+            onEdit={onEditProduct}
             viewMode={viewMode}
           />
         );

@@ -1,8 +1,10 @@
 import { useRef, useEffect, useState } from "react";
 import { Product } from "@/types/product";
-import { Download, X, MessageCircle, Send } from "lucide-react";
+import { Download, X, MessageCircle, Send, Upload } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 interface OrderImageGeneratorProps {
   selectedProducts: Product[];
@@ -12,6 +14,8 @@ interface OrderImageGeneratorProps {
 export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGeneratorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string>("");
 
   useEffect(() => {
     if (selectedProducts.length > 0) {
@@ -116,12 +120,14 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
 
         // Draw text
         ctx.fillStyle = "#1f2937";
-        ctx.font = "bold 20px system-ui, -apple-system, sans-serif";
+        ctx.font = "bold 18px system-ui, -apple-system, sans-serif";
         ctx.textAlign = "center";
         
-        // Product name
+        // Product name with SKU
         const name = selectedProducts[index].name;
-        ctx.fillText(name, x + imgSize / 2, y + imgSize + 30);
+        const sku = selectedProducts[index].sku;
+        const displayText = sku ? `${name} (${sku})` : name;
+        ctx.fillText(displayText, x + imgSize / 2, y + imgSize + 30);
         
         // Price
         if (selectedProducts[index].price) {
@@ -164,6 +170,23 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     toast.success("Image downloaded successfully!");
   };
 
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+      setReceiptFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setReceiptPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      toast.success("Receipt attached!");
+    }
+  };
+
   const handleWhatsAppShare = async () => {
     if (!imageUrl) {
       toast.error("Image not ready yet");
@@ -173,30 +196,44 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
-      const file = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
+      const orderFile = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
+
+      const files = [orderFile];
+      if (receiptFile) {
+        files.push(receiptFile);
+      }
 
       // Try Web Share API first (works on mobile and some desktop browsers)
-      if (navigator.share && navigator.canShare({ files: [file] })) {
+      if (navigator.share && navigator.canShare({ files })) {
         await navigator.share({
-          files: [file],
-          title: "Order Image",
+          files,
+          title: receiptFile ? "Order & Receipt" : "Order Image",
           text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
         });
         toast.success("Sharing to WhatsApp...");
       } else {
-        // Desktop fallback: Download image and open WhatsApp Web
+        // Desktop fallback: Download images and open WhatsApp Web
         const link = document.createElement("a");
         link.download = `order-${Date.now()}.png`;
         link.href = imageUrl;
         link.click();
+        
+        if (receiptFile) {
+          setTimeout(() => {
+            const receiptLink = document.createElement("a");
+            receiptLink.download = receiptFile.name;
+            receiptLink.href = URL.createObjectURL(receiptFile);
+            receiptLink.click();
+          }, 300);
+        }
         
         // Small delay to ensure download starts
         setTimeout(() => {
           const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
           const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
           window.open(whatsappUrl, "_blank");
-          toast.success("Image downloaded! Please attach it in WhatsApp");
-        }, 500);
+          toast.success("Images downloaded! Please attach them in WhatsApp");
+        }, 700);
       }
     } catch (error) {
       console.error("Error sharing to WhatsApp:", error);
@@ -213,29 +250,43 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
-      const file = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
+      const orderFile = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
+
+      const files = [orderFile];
+      if (receiptFile) {
+        files.push(receiptFile);
+      }
 
       // Try Web Share API first (works on mobile and some desktop browsers)
-      if (navigator.share && navigator.canShare({ files: [file] })) {
+      if (navigator.share && navigator.canShare({ files })) {
         await navigator.share({
-          files: [file],
-          title: "Order Image",
+          files,
+          title: receiptFile ? "Order & Receipt" : "Order Image",
           text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
         });
         toast.success("Sharing to Messenger...");
       } else {
-        // Desktop fallback: Download image and open Messenger
+        // Desktop fallback: Download images and open Messenger
         const link = document.createElement("a");
         link.download = `order-${Date.now()}.png`;
         link.href = imageUrl;
         link.click();
         
+        if (receiptFile) {
+          setTimeout(() => {
+            const receiptLink = document.createElement("a");
+            receiptLink.download = receiptFile.name;
+            receiptLink.href = URL.createObjectURL(receiptFile);
+            receiptLink.click();
+          }, 300);
+        }
+        
         // Small delay to ensure download starts
         setTimeout(() => {
           const messengerUrl = `https://www.facebook.com/messages/t/`;
           window.open(messengerUrl, "_blank");
-          toast.success("Image downloaded! Please attach it in Messenger");
-        }, 500);
+          toast.success("Images downloaded! Please attach them in Messenger");
+        }, 700);
       }
     } catch (error) {
       console.error("Error sharing to Messenger:", error);
@@ -255,18 +306,58 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
         </div>
 
         {/* Image preview */}
-        <div className="flex-1 flex items-center justify-center overflow-auto">
-          {imageUrl && (
-            <img 
-              src={imageUrl} 
-              alt="Order preview" 
-              className="max-w-full max-h-full rounded-lg shadow-2xl"
-            />
+        <div className="flex-1 flex items-center justify-center overflow-auto gap-4">
+          <div className="flex flex-col items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Order Image</Label>
+            {imageUrl && (
+              <img 
+                src={imageUrl} 
+                alt="Order preview" 
+                className="max-w-full max-h-[400px] rounded-lg shadow-xl"
+              />
+            )}
+          </div>
+          {receiptPreview && (
+            <div className="flex flex-col items-center gap-2">
+              <Label className="text-sm text-muted-foreground">Receipt</Label>
+              <img 
+                src={receiptPreview} 
+                alt="Receipt preview" 
+                className="max-w-full max-h-[400px] rounded-lg shadow-xl"
+              />
+            </div>
           )}
         </div>
 
         {/* Actions */}
         <div className="mt-4 flex flex-col gap-3">
+          {/* Receipt Upload */}
+          <div className="flex flex-col gap-2 p-4 border border-border rounded-lg bg-card">
+            <Label htmlFor="receipt-upload" className="text-sm font-medium">
+              Attach Receipt (Optional)
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="receipt-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleReceiptUpload}
+                className="flex-1"
+              />
+              {receiptFile && (
+                <Button
+                  onClick={() => {
+                    setReceiptFile(null);
+                    setReceiptPreview("");
+                  }}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
           <Button 
             onClick={handleDownload} 
             className="w-full"

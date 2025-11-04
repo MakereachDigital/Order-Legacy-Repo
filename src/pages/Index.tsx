@@ -87,10 +87,8 @@ const Index = () => {
       }
 
       if (matchedProduct) {
-        // Add the product quantity times
-        for (let i = 0; i < extracted.quantity; i++) {
-          newSelectedProducts.push(matchedProduct);
-        }
+        // Add the product once with quantity info
+        newSelectedProducts.push({ ...matchedProduct, quantity: extracted.quantity });
       } else {
         notFoundProducts.push(`${extracted.name} (${extracted.sku || 'No SKU'})`);
       }

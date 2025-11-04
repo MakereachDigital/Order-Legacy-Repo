@@ -123,10 +123,13 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
         ctx.font = "bold 36px system-ui, -apple-system, sans-serif"; // Doubled font size
         ctx.textAlign = "center";
         
-        // Product name with SKU
+        // Product name with SKU and quantity
         const name = selectedProducts[index].name;
         const sku = selectedProducts[index].sku;
-        const displayText = sku ? `${name} (${sku})` : name;
+        const quantity = selectedProducts[index].quantity;
+        let displayText = name;
+        if (sku) displayText += ` (${sku})`;
+        if (quantity) displayText += ` x${quantity}`;
         ctx.fillText(displayText, x + imgSize / 2, y + imgSize + 60);
         
         // Price

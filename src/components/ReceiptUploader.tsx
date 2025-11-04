@@ -88,6 +88,13 @@ export const ReceiptUploader = ({ onProductsExtracted }: ReceiptUploaderProps) =
     setShowResults(false);
   };
 
+  const handleRemoveProduct = (index: number) => {
+    setExtractedProducts((prev) => prev.filter((_, i) => i !== index));
+    if (extractedProducts.length <= 1) {
+      toast.info("All products removed");
+    }
+  };
+
   return (
     <div className="border border-border rounded-lg p-4 bg-card space-y-4">
       <div className="flex items-center justify-between">
@@ -121,19 +128,29 @@ export const ReceiptUploader = ({ onProductsExtracted }: ReceiptUploaderProps) =
           )}
         </div>
 
-        {receiptPreview && (
-          <div className="relative w-full max-w-xs mx-auto">
+        {receiptPreview && !showResults && (
+          <div className="relative w-full max-w-xs mx-auto max-h-60 overflow-hidden">
             <img
               src={receiptPreview}
               alt="Receipt preview"
-              className="w-full h-auto rounded-lg border border-border"
+              className="w-full h-auto rounded-lg border border-border object-contain"
             />
           </div>
         )}
 
         {showResults && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+            {receiptPreview && (
+              <div className="relative w-full max-w-xs mx-auto max-h-48 overflow-hidden">
+                <img
+                  src={receiptPreview}
+                  alt="Receipt preview"
+                  className="w-full h-auto rounded-lg border border-border object-contain"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg sticky top-0 z-10">
               <div className="flex items-center gap-2">
                 {extractedProducts.length > 0 ? (
                   <>
@@ -153,26 +170,40 @@ export const ReceiptUploader = ({ onProductsExtracted }: ReceiptUploaderProps) =
 
             {extractedProducts.length > 0 && (
               <>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="space-y-2">
                   {extractedProducts.map((product, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 bg-background rounded border border-border"
+                      className="flex items-center justify-between gap-2 p-2 bg-background rounded border border-border"
                     >
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{product.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{product.name}</p>
                         {product.sku && (
                           <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
                         )}
                       </div>
-                      <span className="text-sm font-semibold px-2 py-1 bg-primary/10 text-primary rounded">
-                        x{product.quantity}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-semibold px-2 py-1 bg-primary/10 text-primary rounded">
+                          x{product.quantity}
+                        </span>
+                        <Button
+                          onClick={() => handleRemoveProduct(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                <Button onClick={handleAutoSelect} className="w-full" size="lg">
+                <Button 
+                  onClick={handleAutoSelect} 
+                  className="w-full sticky bottom-0 z-10" 
+                  size="lg"
+                >
                   <Check className="h-4 w-4 mr-2" />
                   Auto-Select These Products
                 </Button>

@@ -22,6 +22,8 @@ interface AddProductDialogProps {
 export const AddProductDialog = ({ onAddProduct }: AddProductDialogProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [sku, setSku] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
@@ -48,6 +50,8 @@ export const AddProductDialog = ({ onAddProduct }: AddProductDialogProps) => {
       id: `custom-${Date.now()}`,
       name,
       image: imagePreview,
+      price: price || undefined,
+      sku: sku || undefined,
     };
 
     onAddProduct(newProduct);
@@ -55,6 +59,8 @@ export const AddProductDialog = ({ onAddProduct }: AddProductDialogProps) => {
     
     // Reset form
     setName("");
+    setPrice("");
+    setSku("");
     setImageFile(null);
     setImagePreview("");
     setOpen(false);
@@ -73,12 +79,12 @@ export const AddProductDialog = ({ onAddProduct }: AddProductDialogProps) => {
           <DialogHeader>
             <DialogTitle>Add Custom Product</DialogTitle>
             <DialogDescription>
-              Add a new product manually with name and image.
+              Add a new product with name, price, SKU, and image.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Product Name</Label>
+              <Label htmlFor="name">Product Name *</Label>
               <Input
                 id="name"
                 value={name}
@@ -87,7 +93,25 @@ export const AddProductDialog = ({ onAddProduct }: AddProductDialogProps) => {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="image">Product Image</Label>
+              <Label htmlFor="price">Price</Label>
+              <Input
+                id="price"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g., 1,499.00৳"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="sku">SKU</Label>
+              <Input
+                id="sku"
+                value={sku}
+                onChange={(e) => setSku(e.target.value)}
+                placeholder="e.g., OPC"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="image">Product Image *</Label>
               <div className="flex flex-col gap-2">
                 <Input
                   id="image"

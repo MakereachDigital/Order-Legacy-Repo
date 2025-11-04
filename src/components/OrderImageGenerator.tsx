@@ -30,12 +30,12 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Calculate grid dimensions
+    // Calculate grid dimensions with higher resolution
     const itemsPerRow = Math.min(2, selectedProducts.length);
     const rows = Math.ceil(selectedProducts.length / itemsPerRow);
-    const imgSize = 300;
-    const padding = 20;
-    const textHeight = 80;
+    const imgSize = 600; // Doubled for higher quality
+    const padding = 40; // Doubled for proportional spacing
+    const textHeight = 160; // Doubled for proportional spacing
 
     canvas.width = itemsPerRow * imgSize + (itemsPerRow + 1) * padding;
     canvas.height = rows * (imgSize + textHeight) + (rows + 1) * padding;
@@ -118,30 +118,30 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
         ctx.roundRect(x, y, imgSize, imgSize, 16);
         ctx.stroke();
 
-        // Draw text
+        // Draw text with higher quality
         ctx.fillStyle = "#1f2937";
-        ctx.font = "bold 18px system-ui, -apple-system, sans-serif";
+        ctx.font = "bold 36px system-ui, -apple-system, sans-serif"; // Doubled font size
         ctx.textAlign = "center";
         
         // Product name with SKU
         const name = selectedProducts[index].name;
         const sku = selectedProducts[index].sku;
         const displayText = sku ? `${name} (${sku})` : name;
-        ctx.fillText(displayText, x + imgSize / 2, y + imgSize + 30);
+        ctx.fillText(displayText, x + imgSize / 2, y + imgSize + 60);
         
         // Price
         if (selectedProducts[index].price) {
-          ctx.font = "16px system-ui, -apple-system, sans-serif";
+          ctx.font = "32px system-ui, -apple-system, sans-serif"; // Doubled font size
           ctx.fillStyle = "#059669";
           ctx.fillText(
             selectedProducts[index].price!,
             x + imgSize / 2,
-            y + imgSize + 55
+            y + imgSize + 110
           );
         }
       });
 
-      // Convert to blob and create URL
+      // Convert to blob with high quality
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -151,7 +151,7 @@ export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGen
           console.error("Failed to create blob from canvas");
           toast.error("Failed to generate image");
         }
-      }, "image/png");
+      }, "image/png", 1.0); // Maximum quality
     } catch (error) {
       console.error("Error generating order image:", error);
       toast.error("Failed to generate order image. Please try again.");

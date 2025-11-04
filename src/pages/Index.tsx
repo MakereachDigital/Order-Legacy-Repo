@@ -4,6 +4,7 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
 import { AddProductDialog } from "@/components/AddProductDialog";
+import { ReceiptUploader } from "@/components/ReceiptUploader";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,50 @@ const Index = () => {
     );
   };
 
+  const handleProductsExtracted = (extractedProducts: Array<{ sku: string; name: string; quantity: number }>) => {
+    const newSelectedProducts: Product[] = [];
+    const notFoundProducts: string[] = [];
+
+    extractedProducts.forEach(extracted => {
+      // Try to find by SKU first (highest priority)
+      let matchedProduct = products.find(p => 
+        p.sku && p.sku.toLowerCase() === extracted.sku.toLowerCase()
+      );
+
+      // If no SKU match, try fuzzy name matching
+      if (!matchedProduct && extracted.name) {
+        const searchName = extracted.name.toLowerCase();
+        matchedProduct = products.find(p => {
+          const productName = p.name.toLowerCase();
+          return productName.includes(searchName) || searchName.includes(productName);
+        });
+      }
+
+      if (matchedProduct) {
+        // Add the product quantity times
+        for (let i = 0; i < extracted.quantity; i++) {
+          newSelectedProducts.push(matchedProduct);
+        }
+      } else {
+        notFoundProducts.push(`${extracted.name} (${extracted.sku || 'No SKU'})`);
+      }
+    });
+
+    if (newSelectedProducts.length > 0) {
+      setSelectedProducts(prev => [...prev, ...newSelectedProducts]);
+      toast.success(`Added ${newSelectedProducts.length} product(s) to order`);
+      
+      // Auto-generate image after a short delay
+      setTimeout(() => {
+        setShowGenerator(true);
+      }, 500);
+    }
+
+    if (notFoundProducts.length > 0) {
+      toast.error(`Could not find: ${notFoundProducts.join(", ")}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -90,7 +135,7 @@ const Index = () => {
 
       {/* Search & Actions Bar */}
       <div className="sticky top-[73px] z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-4 py-3 space-y-3">
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -107,6 +152,9 @@ const Index = () => {
               )}
             </div>
           </div>
+          
+          {/* Receipt Uploader */}
+          <ReceiptUploader onProductsExtracted={handleProductsExtracted} />
         </div>
       </div>
 
@@ -136,22 +184,27 @@ const Index = () => {
           <div className="container mx-auto px-4 py-3 space-y-3">
             {/* Thumbnail Strip */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
-              {selectedProducts.map((product, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleRemoveSelection(index)}
-                  className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-primary cursor-pointer hover:opacity-75 transition-opacity"
-                >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-bl-lg flex items-center justify-center">
-                    {index + 1}
+            {selectedProducts.map((product, index) => (
+              <div
+                key={index}
+                onClick={() => handleRemoveSelection(index)}
+                className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-primary cursor-pointer hover:opacity-75 transition-opacity"
+              >
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+                {product.sku && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[8px] font-bold text-center py-0.5 truncate px-1">
+                    {product.sku}
                   </div>
+                )}
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-bl-lg flex items-center justify-center">
+                  {index + 1}
                 </div>
-              ))}
+              </div>
+            ))}
             </div>
             
             {/* Generate Button */}

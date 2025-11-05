@@ -8,22 +8,33 @@ interface ProductCardProps {
   onToggle: () => void;
   onEdit: (updatedProduct: Product) => void;
   viewMode?: ViewMode;
+  isEditMode?: boolean;
+  isSelectedForEdit?: boolean;
 }
 
-export const ProductCard = ({ product, selectionNumbers, onToggle, onEdit, viewMode = "medium" }: ProductCardProps) => {
+export const ProductCard = ({ 
+  product, 
+  selectionNumbers, 
+  onToggle, 
+  onEdit, 
+  viewMode = "medium",
+  isEditMode = false,
+  isSelectedForEdit = false
+}: ProductCardProps) => {
   const isListView = viewMode === "list";
   const isSelected = selectionNumbers.length > 0;
+  const showHighlight = isEditMode ? isSelectedForEdit : isSelected;
   
   return (
     <div
       onClick={onToggle}
       className={`group relative cursor-pointer rounded-lg overflow-hidden transition-all duration-300 border ${
-        isSelected 
+        showHighlight
           ? "ring-2 ring-primary shadow-xl scale-[1.02] border-primary" 
           : "border-border hover:border-primary/50 hover:shadow-lg"
       } ${isListView ? "flex flex-row items-center" : ""}`}
     >
-      <EditProductDialog product={product} onEditProduct={onEdit} />
+      {!isEditMode && <EditProductDialog product={product} onEditProduct={onEdit} />}
       <div className={`${isListView ? "w-28 h-28 flex-shrink-0" : "aspect-square"} relative bg-muted`}>
         <img
           src={product.image}
@@ -31,7 +42,14 @@ export const ProductCard = ({ product, selectionNumbers, onToggle, onEdit, viewM
           className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
           loading="lazy"
         />
-        {isSelected && (
+        {isEditMode && isSelectedForEdit && (
+          <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
+            <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold shadow-lg">
+              ✓
+            </div>
+          </div>
+        )}
+        {!isEditMode && isSelected && (
           <div className="absolute inset-0 bg-primary/10 backdrop-blur-[1px]">
             <div className="absolute top-2 right-2 flex flex-wrap gap-1 max-w-[80%] justify-end">
               {selectionNumbers.map((num) => (
@@ -57,6 +75,11 @@ export const ProductCard = ({ product, selectionNumbers, onToggle, onEdit, viewM
             </span>
           )}
         </div>
+        {product.category && (
+          <span className="inline-block text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded mt-1">
+            {product.category}
+          </span>
+        )}
         {product.price && (
           <p className={`${isListView ? "text-sm" : "text-xs"} text-muted-foreground mt-1`}>{product.price}</p>
         )}

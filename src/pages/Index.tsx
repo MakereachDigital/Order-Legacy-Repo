@@ -7,6 +7,9 @@ import { AddProductDialog } from "@/components/AddProductDialog";
 import { ReceiptUploader } from "@/components/ReceiptUploader";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
+import { CategoryFilter } from "@/components/CategoryFilter";
+import { EditModeToggle } from "@/components/EditModeToggle";
+import { EditModePanel } from "@/components/EditModePanel";
 import { Button } from "@/components/ui/button";
 import { ImageIcon, Package } from "lucide-react";
 import { toast } from "sonner";
@@ -18,16 +21,40 @@ const Index = () => {
   const [showGenerator, setShowGenerator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("medium");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedForEdit, setSelectedForEdit] = useState<string[]>([]);
 
   const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products;
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [products, searchQuery]);
+    let filtered = products;
+    
+    // Filter by category
+    if (selectedCategory) {
+      filtered = filtered.filter((p) => p.category === selectedCategory);
+    }
+    
+    // Filter by search
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [products, searchQuery, selectedCategory]);
 
   const handleToggleProduct = (product: Product) => {
-    setSelectedProducts((prev) => [...prev, product]);
+    if (isEditMode) {
+      // Edit mode: toggle selection for editing
+      setSelectedForEdit((prev) =>
+        prev.includes(product.id)
+          ? prev.filter((id) => id !== product.id)
+          : [...prev, product.id]
+      );
+    } else {
+      // Normal mode: add to order
+      setSelectedProducts((prev) => [...prev, product]);
+    }
   };
 
   const handleRemoveSelection = (index: number) => {
@@ -65,6 +92,20 @@ const Index = () => {
     setSelectedProducts((prev) =>
       prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
     );
+  };
+
+  const handleBulkCategoryChange = (productIds: string[], category: Product["category"]) => {
+    setProducts((prev) =>
+      prev.map((p) => (productIds.includes(p.id) ? { ...p, category } : p))
+    );
+    toast.success(`Updated ${productIds.length} product(s)`);
+    setSelectedForEdit([]);
+  };
+
+  const handleBulkDelete = (productIds: string[]) => {
+    setProducts((prev) => prev.filter((p) => !productIds.includes(p.id)));
+    toast.success(`Deleted ${productIds.length} product(s)`);
+    setSelectedForEdit([]);
   };
 
   const handleProductsExtracted = (extractedProducts: Array<{ sku: string; name: string; quantity: number }>) => {
@@ -111,20 +152,31 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary p-2 rounded-lg">
-                <Package className="h-5 w-5 text-primary-foreground" />
+      {/* Compact Sticky Header */}
+      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border shadow-sm">
+        <div className="container mx-auto px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary p-1.5 rounded-md">
+                <Package className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-foreground">Legacy Dhaka</h1>
-                <p className="text-xs text-muted-foreground">Delivery Order Manager</p>
+                <h1 className="text-sm font-bold text-foreground leading-none">Legacy Dhaka</h1>
+                <p className="text-[10px] text-muted-foreground">Order Manager</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <CategoryFilter 
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
+              <EditModeToggle 
+                isEditMode={isEditMode}
+                onToggle={() => {
+                  setIsEditMode(!isEditMode);
+                  setSelectedForEdit([]);
+                }}
+              />
               <ThemeToggle />
             </div>
           </div>
@@ -132,18 +184,19 @@ const Index = () => {
       </header>
 
       {/* Search & Actions Bar */}
-      <div className="sticky top-[73px] z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-        <div className="container mx-auto px-4 py-3 space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="sticky top-[53px] z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
+        <div className="container mx-auto px-3 py-2.5 space-y-2.5">
+          <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-              <AddProductDialog onAddProduct={handleAddProduct} />
-              {selectedProducts.length > 0 && (
+              {!isEditMode && <AddProductDialog onAddProduct={handleAddProduct} />}
+              {!isEditMode && selectedProducts.length > 0 && (
                 <Button
                   onClick={handleClearSelection}
                   variant="ghost"
                   size="sm"
+                  className="h-8"
                 >
                   Clear ({selectedProducts.length})
                 </Button>
@@ -151,8 +204,8 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Receipt Uploader */}
-          <ReceiptUploader onProductsExtracted={handleProductsExtracted} />
+          {/* Receipt Uploader - Only show in normal mode */}
+          {!isEditMode && <ReceiptUploader onProductsExtracted={handleProductsExtracted} />}
         </div>
       </div>
 
@@ -172,12 +225,25 @@ const Index = () => {
           onEditProduct={handleEditProduct}
           getSelectionNumbers={getSelectionNumbers}
           viewMode={viewMode}
+          isEditMode={isEditMode}
+          selectedForEdit={selectedForEdit}
         />
         )}
       </main>
 
+      {/* Edit Mode Panel */}
+      {isEditMode && (
+        <EditModePanel
+          selectedForEdit={selectedForEdit}
+          products={products}
+          onCategoryChange={handleBulkCategoryChange}
+          onDelete={handleBulkDelete}
+          onClearSelection={() => setSelectedForEdit([])}
+        />
+      )}
+
       {/* Bottom Action Bar with Thumbnails */}
-      {selectedProducts.length > 0 && (
+      {!isEditMode && selectedProducts.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-t border-border shadow-lg">
           <div className="container mx-auto px-4 py-3 space-y-3">
             {/* Thumbnail Strip */}

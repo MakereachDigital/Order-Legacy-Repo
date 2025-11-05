@@ -9,6 +9,8 @@ interface ProductGridProps {
   onEditProduct: (updatedProduct: Product) => void;
   getSelectionNumbers: (productId: string) => number[];
   viewMode: ViewMode;
+  isEditMode?: boolean;
+  selectedForEdit?: string[];
 }
 
 export const ProductGrid = ({ 
@@ -17,7 +19,9 @@ export const ProductGrid = ({
   onToggleProduct,
   onEditProduct, 
   getSelectionNumbers,
-  viewMode 
+  viewMode,
+  isEditMode = false,
+  selectedForEdit = []
 }: ProductGridProps) => {
   const getGridClasses = () => {
     if (viewMode === "list") {
@@ -40,6 +44,7 @@ export const ProductGrid = ({
     <div className={getGridClasses()}>
       {products.map((product) => {
         const selectionNumbers = getSelectionNumbers(product.id);
+        const isSelectedForEdit = selectedForEdit.includes(product.id);
         return (
           <ProductCard
             key={product.id}
@@ -48,6 +53,8 @@ export const ProductGrid = ({
             onToggle={() => onToggleProduct(product)}
             onEdit={onEditProduct}
             viewMode={viewMode}
+            isEditMode={isEditMode}
+            isSelectedForEdit={isSelectedForEdit}
           />
         );
       })}

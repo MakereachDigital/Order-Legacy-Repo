@@ -5,4 +5,5 @@ export interface Product {
   price?: string;
   sku?: string;
   quantity?: number;
+  category?: "Cufflinks" | "Ties" | "Other";
 }

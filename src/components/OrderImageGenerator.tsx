@@ -9,19 +9,36 @@ import { Label } from "./ui/label";
 interface OrderImageGeneratorProps {
   selectedProducts: Product[];
   onClose: () => void;
+  initialReceiptFile?: File | null;
+  initialReceiptPreview?: string;
 }
 
-export const OrderImageGenerator = ({ selectedProducts, onClose }: OrderImageGeneratorProps) => {
+export const OrderImageGenerator = ({ 
+  selectedProducts, 
+  onClose,
+  initialReceiptFile,
+  initialReceiptPreview 
+}: OrderImageGeneratorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [receiptPreview, setReceiptPreview] = useState<string>("");
+  const [receiptFile, setReceiptFile] = useState<File | null>(initialReceiptFile || null);
+  const [receiptPreview, setReceiptPreview] = useState<string>(initialReceiptPreview || "");
 
   useEffect(() => {
     if (selectedProducts.length > 0) {
       generateOrderImage();
     }
   }, [selectedProducts]);
+
+  useEffect(() => {
+    // Auto-populate receipt if provided
+    if (initialReceiptFile) {
+      setReceiptFile(initialReceiptFile);
+    }
+    if (initialReceiptPreview) {
+      setReceiptPreview(initialReceiptPreview);
+    }
+  }, [initialReceiptFile, initialReceiptPreview]);
 
   const generateOrderImage = async () => {
     const canvas = canvasRef.current;

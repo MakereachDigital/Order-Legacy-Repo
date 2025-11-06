@@ -14,11 +14,19 @@ interface ExtractedProduct {
 
 interface ReceiptUploaderProps {
   onProductsExtracted: (products: ExtractedProduct[]) => void;
+  receiptFile: File | null;
+  setReceiptFile: (file: File | null) => void;
+  receiptPreview: string;
+  setReceiptPreview: (preview: string) => void;
 }
 
-export const ReceiptUploader = ({ onProductsExtracted }: ReceiptUploaderProps) => {
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [receiptPreview, setReceiptPreview] = useState<string>("");
+export const ReceiptUploader = ({ 
+  onProductsExtracted, 
+  receiptFile, 
+  setReceiptFile, 
+  receiptPreview, 
+  setReceiptPreview 
+}: ReceiptUploaderProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedProducts, setExtractedProducts] = useState<ExtractedProduct[]>([]);
   const [showResults, setShowResults] = useState(false);

@@ -5,13 +5,16 @@ import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
 import { AddProductDialog } from "@/components/AddProductDialog";
 import { ReceiptUploader } from "@/components/ReceiptUploader";
+import { ImportProductsDialog } from "@/components/ImportProductsDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { EditModeToggle } from "@/components/EditModeToggle";
 import { EditModePanel } from "@/components/EditModePanel";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, Package } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ImageIcon, Package, FileText } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
 
@@ -24,6 +27,9 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedForEdit, setSelectedForEdit] = useState<string[]>([]);
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string>("");
 
   const filteredProducts = useMemo(() => {
     let filtered = products;
@@ -84,6 +90,10 @@ const Index = () => {
     setProducts((prev) => [...prev, product]);
   };
 
+  const handleImportProducts = (importedProducts: Product[]) => {
+    setProducts((prev) => [...prev, ...importedProducts]);
+  };
+
   const handleEditProduct = (updatedProduct: Product) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
@@ -139,10 +149,11 @@ const Index = () => {
       setSelectedProducts(prev => [...prev, ...newSelectedProducts]);
       toast.success(`Added ${newSelectedProducts.length} product(s) to order`);
       
-      // Auto-generate image after a short delay
+      // Close receipt dialog and auto-open generator with receipt attached
+      setShowReceiptDialog(false);
       setTimeout(() => {
         setShowGenerator(true);
-      }, 500);
+      }, 300);
     }
 
     if (notFoundProducts.length > 0) {
@@ -185,9 +196,60 @@ const Index = () => {
 
       {/* Search & Actions Bar */}
       <div className="sticky top-[53px] z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-        <div className="container mx-auto px-3 py-2.5 space-y-2.5">
+        <div className="container mx-auto px-3 py-2.5">
           <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              
+              {/* Receipt Button */}
+              {!isEditMode && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0 shrink-0">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Smart Receipt Upload</DialogTitle>
+                          </DialogHeader>
+                          <ReceiptUploader
+                            onProductsExtracted={handleProductsExtracted}
+                            receiptFile={receiptFile}
+                            setReceiptFile={setReceiptFile}
+                            receiptPreview={receiptPreview}
+                            setReceiptPreview={setReceiptPreview}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Upload Receipt</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              
+              {/* Import Button */}
+              {!isEditMode && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <ImportProductsDialog onImportProducts={handleImportProducts} />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Import from URLs</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+            
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
               {!isEditMode && <AddProductDialog onAddProduct={handleAddProduct} />}
@@ -203,9 +265,6 @@ const Index = () => {
               )}
             </div>
           </div>
-          
-          {/* Receipt Uploader - Only show in normal mode */}
-          {!isEditMode && <ReceiptUploader onProductsExtracted={handleProductsExtracted} />}
         </div>
       </div>
 
@@ -288,7 +347,13 @@ const Index = () => {
       {showGenerator && (
         <OrderImageGenerator
           selectedProducts={selectedProducts}
-          onClose={() => setShowGenerator(false)}
+          onClose={() => {
+            setShowGenerator(false);
+            setReceiptFile(null);
+            setReceiptPreview("");
+          }}
+          initialReceiptFile={receiptFile}
+          initialReceiptPreview={receiptPreview}
         />
       )}
     </div>

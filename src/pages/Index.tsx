@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { legacyProducts } from "@/data/legacyProducts";
 import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
@@ -13,12 +14,18 @@ import { EditModeToggle } from "@/components/EditModeToggle";
 import { EditModePanel } from "@/components/EditModePanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ImageIcon, Package, FileText } from "lucide-react";
+import { ImageIcon, Package, FileText, LogIn, LogOut } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
+import { supabase } from "@/integrations/supabase/client";
+import { User, Session } from "@supabase/supabase-js";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [products, setProducts] = useState<Product[]>(legacyProducts);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [showGenerator, setShowGenerator] = useState(false);
@@ -30,6 +37,58 @@ const Index = () => {
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string>("");
+
+  // Authentication setup
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Check admin role when session changes
+        if (session?.user) {
+          setTimeout(() => {
+            checkAdminRole(session.user.id);
+          }, 0);
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkAdminRole(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAdminRole = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .single();
+
+    if (!error && data) {
+      setIsAdmin(true);
+    } else {
+      setIsAdmin(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsAdmin(false);
+    toast.success("Logged out successfully");
+  };
 
   const filteredProducts = useMemo(() => {
     let filtered = products;
@@ -181,14 +240,35 @@ const Index = () => {
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
               />
-              <EditModeToggle 
-                isEditMode={isEditMode}
-                onToggle={() => {
-                  setIsEditMode(!isEditMode);
-                  setSelectedForEdit([]);
-                }}
-              />
+              {isAdmin && (
+                <EditModeToggle 
+                  isEditMode={isEditMode}
+                  onToggle={() => {
+                    setIsEditMode(!isEditMode);
+                    setSelectedForEdit([]);
+                  }}
+                />
+              )}
               <ThemeToggle />
+              {user ? (
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => navigate("/auth")}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                >
+                  <LogIn className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -233,8 +313,8 @@ const Index = () => {
                 </TooltipProvider>
               )}
               
-              {/* Import Button */}
-              {!isEditMode && (
+              {/* Import Button - Admin Only */}
+              {!isEditMode && isAdmin && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

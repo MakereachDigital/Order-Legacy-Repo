@@ -332,7 +332,7 @@ const Index = () => {
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-              {!isEditMode && <AddProductDialog onAddProduct={handleAddProduct} />}
+              {!isEditMode && user && <AddProductDialog onAddProduct={handleAddProduct} />}
               {!isEditMode && selectedProducts.length > 0 && (
                 <Button
                   onClick={handleClearSelection}
@@ -366,6 +366,7 @@ const Index = () => {
           viewMode={viewMode}
           isEditMode={isEditMode}
           selectedForEdit={selectedForEdit}
+          isAuthenticated={!!user}
         />
         )}
       </main>

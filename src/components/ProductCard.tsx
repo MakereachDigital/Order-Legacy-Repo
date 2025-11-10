@@ -10,6 +10,7 @@ interface ProductCardProps {
   viewMode?: ViewMode;
   isEditMode?: boolean;
   isSelectedForEdit?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export const ProductCard = ({ 
@@ -19,7 +20,8 @@ export const ProductCard = ({
   onEdit, 
   viewMode = "medium",
   isEditMode = false,
-  isSelectedForEdit = false
+  isSelectedForEdit = false,
+  isAuthenticated = false
 }: ProductCardProps) => {
   const isListView = viewMode === "list";
   const isSelected = selectionNumbers.length > 0;
@@ -34,7 +36,7 @@ export const ProductCard = ({
           : "border-border hover:border-primary/50 hover:shadow-lg"
       } ${isListView ? "flex flex-row items-center" : ""}`}
     >
-      {!isEditMode && <EditProductDialog product={product} onEditProduct={onEdit} />}
+      {!isEditMode && isAuthenticated && <EditProductDialog product={product} onEditProduct={onEdit} />}
       <div className={`${isListView ? "w-28 h-28 flex-shrink-0" : "aspect-square"} relative bg-muted`}>
         <img
           src={product.image}

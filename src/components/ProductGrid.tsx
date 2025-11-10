@@ -11,6 +11,7 @@ interface ProductGridProps {
   viewMode: ViewMode;
   isEditMode?: boolean;
   selectedForEdit?: string[];
+  isAuthenticated: boolean;
 }
 
 export const ProductGrid = ({ 
@@ -21,7 +22,8 @@ export const ProductGrid = ({
   getSelectionNumbers,
   viewMode,
   isEditMode = false,
-  selectedForEdit = []
+  selectedForEdit = [],
+  isAuthenticated
 }: ProductGridProps) => {
   const getGridClasses = () => {
     if (viewMode === "list") {
@@ -55,6 +57,7 @@ export const ProductGrid = ({
             viewMode={viewMode}
             isEditMode={isEditMode}
             isSelectedForEdit={isSelectedForEdit}
+            isAuthenticated={isAuthenticated}
           />
         );
       })}

@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      products: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          image: string
+          name: string
+          price: string | null
+          sku: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id: string
+          image: string
+          name: string
+          price?: string | null
+          sku?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          image?: string
+          name?: string
+          price?: string | null
+          sku?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

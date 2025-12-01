@@ -313,8 +313,8 @@ const Index = () => {
                 </TooltipProvider>
               )}
               
-              {/* Import Button - Admin Only */}
-              {!isEditMode && isAdmin && (
+              {/* Import Button - Extract from Links */}
+              {!isEditMode && user && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

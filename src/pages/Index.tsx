@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { legacyProducts } from "@/data/legacyProducts";
 import { ProductGrid } from "@/components/ProductGrid";
@@ -26,7 +26,8 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [products, setProducts] = useState<Product[]>(legacyProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [showGenerator, setShowGenerator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,15 +39,56 @@ const Index = () => {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string>("");
 
+  // Load products from database
+  const loadProducts = useCallback(async () => {
+    setIsLoadingProducts(true);
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setProducts(data.map(p => ({
+          id: p.id,
+          name: p.name,
+          image: p.image,
+          price: p.price || undefined,
+          sku: p.sku || undefined,
+          category: p.category as Product["category"] || undefined,
+        })));
+      } else {
+        // First time load - seed from legacy products
+        setProducts(legacyProducts);
+        // Save legacy products to database
+        for (const product of legacyProducts) {
+          await supabase.from("products").upsert({
+            id: product.id,
+            name: product.name,
+            image: product.image,
+            price: product.price || null,
+            sku: product.sku || null,
+            category: product.category || null,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error loading products:", error);
+      setProducts(legacyProducts);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
+
   // Authentication setup
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check admin role when session changes
         if (session?.user) {
           setTimeout(() => {
             checkAdminRole(session.user.id);
@@ -57,7 +99,6 @@ const Index = () => {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -68,6 +109,11 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Load products on mount
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const checkAdminRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -145,15 +191,43 @@ const Index = () => {
       .filter((num) => num !== -1);
   };
 
-  const handleAddProduct = (product: Product) => {
+  const handleAddProduct = async (product: Product) => {
     setProducts((prev) => [...prev, product]);
+    // Save to database
+    try {
+      await supabase.from("products").insert({
+        id: product.id,
+        name: product.name,
+        image: product.image,
+        price: product.price || null,
+        sku: product.sku || null,
+        category: product.category || null,
+      });
+    } catch (error) {
+      console.error("Error saving product:", error);
+    }
   };
 
-  const handleImportProducts = (importedProducts: Product[]) => {
+  const handleImportProducts = async (importedProducts: Product[]) => {
     setProducts((prev) => [...prev, ...importedProducts]);
+    // Save to database
+    try {
+      for (const product of importedProducts) {
+        await supabase.from("products").insert({
+          id: product.id,
+          name: product.name,
+          image: product.image,
+          price: product.price || null,
+          sku: product.sku || null,
+          category: product.category || null,
+        });
+      }
+    } catch (error) {
+      console.error("Error saving imported products:", error);
+    }
   };
 
-  const handleEditProduct = (updatedProduct: Product) => {
+  const handleEditProduct = async (updatedProduct: Product) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
     );
@@ -161,20 +235,48 @@ const Index = () => {
     setSelectedProducts((prev) =>
       prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
     );
+    // Save to database
+    try {
+      await supabase.from("products").update({
+        name: updatedProduct.name,
+        image: updatedProduct.image,
+        price: updatedProduct.price || null,
+        sku: updatedProduct.sku || null,
+        category: updatedProduct.category || null,
+      }).eq("id", updatedProduct.id);
+    } catch (error) {
+      console.error("Error updating product:", error);
+    }
   };
 
-  const handleBulkCategoryChange = (productIds: string[], category: Product["category"]) => {
+  const handleBulkCategoryChange = async (productIds: string[], category: Product["category"]) => {
     setProducts((prev) =>
       prev.map((p) => (productIds.includes(p.id) ? { ...p, category } : p))
     );
     toast.success(`Updated ${productIds.length} product(s)`);
     setSelectedForEdit([]);
+    // Update in database
+    try {
+      for (const id of productIds) {
+        await supabase.from("products").update({ category: category || null }).eq("id", id);
+      }
+    } catch (error) {
+      console.error("Error updating categories:", error);
+    }
   };
 
-  const handleBulkDelete = (productIds: string[]) => {
+  const handleBulkDelete = async (productIds: string[]) => {
     setProducts((prev) => prev.filter((p) => !productIds.includes(p.id)));
     toast.success(`Deleted ${productIds.length} product(s)`);
     setSelectedForEdit([]);
+    // Delete from database
+    try {
+      for (const id of productIds) {
+        await supabase.from("products").delete().eq("id", id);
+      }
+    } catch (error) {
+      console.error("Error deleting products:", error);
+    }
   };
 
   const handleProductsExtracted = (extractedProducts: Array<{ sku: string; name: string; quantity: number }>) => {
@@ -182,25 +284,37 @@ const Index = () => {
     const notFoundProducts: string[] = [];
 
     extractedProducts.forEach(extracted => {
-      // Try to find by SKU first (highest priority)
-      let matchedProduct = products.find(p => 
-        p.sku && p.sku.toLowerCase() === extracted.sku.toLowerCase()
-      );
+      let matchedProduct: Product | undefined = undefined;
+      
+      // Try to find by SKU first (highest priority) - if SKU exists in extracted data
+      if (extracted.sku) {
+        matchedProduct = products.find(p => 
+          p.sku && p.sku.toLowerCase() === extracted.sku.toLowerCase()
+        );
+      }
 
       // If no SKU match, try fuzzy name matching
       if (!matchedProduct && extracted.name) {
-        const searchName = extracted.name.toLowerCase();
-        matchedProduct = products.find(p => {
-          const productName = p.name.toLowerCase();
-          return productName.includes(searchName) || searchName.includes(productName);
-        });
+        const searchName = extracted.name.toLowerCase().trim();
+        // Try exact match first
+        matchedProduct = products.find(p => 
+          p.name.toLowerCase().trim() === searchName
+        );
+        
+        // Try partial match if no exact match
+        if (!matchedProduct) {
+          matchedProduct = products.find(p => {
+            const productName = p.name.toLowerCase().trim();
+            return productName.includes(searchName) || searchName.includes(productName);
+          });
+        }
       }
 
       if (matchedProduct) {
         // Add the product once with quantity info
         newSelectedProducts.push({ ...matchedProduct, quantity: extracted.quantity });
       } else {
-        notFoundProducts.push(`${extracted.name} (${extracted.sku || 'No SKU'})`);
+        notFoundProducts.push(`${extracted.name || 'Unknown'} (${extracted.sku || 'No SKU'})`);
       }
     });
 

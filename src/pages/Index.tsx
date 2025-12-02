@@ -249,19 +249,53 @@ const Index = () => {
     }
   };
 
-  const handleBulkCategoryChange = async (productIds: string[], category: Product["category"]) => {
+  const handleBulkEdit = async (productIds: string[], changes: { 
+    category?: Product["category"]; 
+    pricePrefix?: string; 
+    priceSuffix?: string;
+    namePrefix?: string;
+    nameSuffix?: string;
+  }) => {
     setProducts((prev) =>
-      prev.map((p) => (productIds.includes(p.id) ? { ...p, category } : p))
+      prev.map((p) => {
+        if (!productIds.includes(p.id)) return p;
+        
+        let updated = { ...p };
+        if (changes.category) updated.category = changes.category;
+        if (changes.namePrefix || changes.nameSuffix) {
+          updated.name = `${changes.namePrefix || ""}${p.name}${changes.nameSuffix || ""}`;
+        }
+        if (changes.pricePrefix || changes.priceSuffix) {
+          const currentPrice = p.price || "";
+          updated.price = `${changes.pricePrefix || ""}${currentPrice}${changes.priceSuffix || ""}`;
+        }
+        return updated;
+      })
     );
     toast.success(`Updated ${productIds.length} product(s)`);
     setSelectedForEdit([]);
+    
     // Update in database
     try {
       for (const id of productIds) {
-        await supabase.from("products").update({ category: category || null }).eq("id", id);
+        const product = products.find(p => p.id === id);
+        if (!product) continue;
+        
+        const updateData: Record<string, string | null> = {};
+        if (changes.category) updateData.category = changes.category;
+        if (changes.namePrefix || changes.nameSuffix) {
+          updateData.name = `${changes.namePrefix || ""}${product.name}${changes.nameSuffix || ""}`;
+        }
+        if (changes.pricePrefix || changes.priceSuffix) {
+          updateData.price = `${changes.pricePrefix || ""}${product.price || ""}${changes.priceSuffix || ""}`;
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          await supabase.from("products").update(updateData).eq("id", id);
+        }
       }
     } catch (error) {
-      console.error("Error updating categories:", error);
+      console.error("Error updating products:", error);
     }
   };
 
@@ -490,9 +524,10 @@ const Index = () => {
         <EditModePanel
           selectedForEdit={selectedForEdit}
           products={products}
-          onCategoryChange={handleBulkCategoryChange}
+          onBulkEdit={handleBulkEdit}
           onDelete={handleBulkDelete}
           onClearSelection={() => setSelectedForEdit([])}
+          onSelectAll={() => setSelectedForEdit(filteredProducts.map(p => p.id))}
         />
       )}
 

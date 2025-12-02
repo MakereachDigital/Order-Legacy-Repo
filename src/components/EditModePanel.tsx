@@ -1,39 +1,41 @@
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tag, Trash2 } from "lucide-react";
+import { Trash2, CheckSquare } from "lucide-react";
+import { BulkEditDialog, BulkChanges } from "./BulkEditDialog";
 
 interface EditModePanelProps {
   selectedForEdit: string[];
   products: Product[];
-  onCategoryChange: (productIds: string[], category: Product["category"]) => void;
+  onBulkEdit: (productIds: string[], changes: BulkChanges) => void;
   onDelete: (productIds: string[]) => void;
   onClearSelection: () => void;
+  onSelectAll: () => void;
 }
 
 export const EditModePanel = ({
   selectedForEdit,
   products,
-  onCategoryChange,
+  onBulkEdit,
   onDelete,
   onClearSelection,
+  onSelectAll,
 }: EditModePanelProps) => {
-  const handleCategoryChange = (category: string) => {
-    onCategoryChange(selectedForEdit, category as Product["category"]);
+  const handleBulkEdit = (changes: BulkChanges) => {
+    onBulkEdit(selectedForEdit, changes);
   };
 
   if (selectedForEdit.length === 0) {
     return (
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90 border border-border rounded-lg px-4 py-2 shadow-lg">
-        <p className="text-sm text-muted-foreground">
-          Click products to select them for bulk editing
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            Click products to select them
+          </p>
+          <Button onClick={onSelectAll} variant="outline" size="sm" className="h-7">
+            <CheckSquare className="h-3 w-3 mr-1" />
+            Select All
+          </Button>
+        </div>
       </div>
     );
   }
@@ -45,17 +47,10 @@ export const EditModePanel = ({
           {selectedForEdit.length} selected
         </span>
         
-        <Select onValueChange={handleCategoryChange}>
-          <SelectTrigger className="h-8 w-32">
-            <Tag className="h-3 w-3 mr-1" />
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Cufflinks">Cufflinks</SelectItem>
-            <SelectItem value="Ties">Ties</SelectItem>
-            <SelectItem value="Other">Other</SelectItem>
-          </SelectContent>
-        </Select>
+        <BulkEditDialog 
+          selectedCount={selectedForEdit.length}
+          onApply={handleBulkEdit}
+        />
 
         <Button
           onClick={() => onDelete(selectedForEdit)}

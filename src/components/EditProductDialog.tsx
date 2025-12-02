@@ -84,7 +84,7 @@ export const EditProductDialog = ({ product, onEditProduct }: EditProductDialogP
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]" onPointerDownOutside={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>

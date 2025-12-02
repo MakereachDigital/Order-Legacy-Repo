@@ -137,7 +137,7 @@ export const ReceiptUploader = ({
         </div>
 
         {receiptPreview && !showResults && (
-          <div className="relative w-full max-w-xs mx-auto max-h-60 overflow-hidden">
+          <div className="relative w-full mx-auto overflow-auto max-h-[60vh]">
             <img
               src={receiptPreview}
               alt="Receipt preview"
@@ -147,9 +147,9 @@ export const ReceiptUploader = ({
         )}
 
         {showResults && (
-          <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
             {receiptPreview && (
-              <div className="relative w-full max-w-xs mx-auto max-h-48 overflow-hidden">
+              <div className="relative w-full mx-auto overflow-auto max-h-[40vh]">
                 <img
                   src={receiptPreview}
                   alt="Receipt preview"

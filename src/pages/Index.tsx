@@ -388,15 +388,6 @@ const Index = () => {
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
               />
-              {isAdmin && (
-                <EditModeToggle 
-                  isEditMode={isEditMode}
-                  onToggle={() => {
-                    setIsEditMode(!isEditMode);
-                    setSelectedForEdit([]);
-                  }}
-                />
-              )}
               <ThemeToggle />
               {user ? (
                 <Button
@@ -462,7 +453,7 @@ const Index = () => {
               )}
               
               {/* Import Button - Extract from Links */}
-              {!isEditMode && user && (
+              {!isEditMode && isAdmin && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -471,10 +462,21 @@ const Index = () => {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Import from URLs</p>
+                      <p>Import Products</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+              )}
+              
+              {/* Edit Mode Toggle - beside Import */}
+              {isAdmin && (
+                <EditModeToggle 
+                  isEditMode={isEditMode}
+                  onToggle={() => {
+                    setIsEditMode(!isEditMode);
+                    setSelectedForEdit([]);
+                  }}
+                />
               )}
             </div>
             

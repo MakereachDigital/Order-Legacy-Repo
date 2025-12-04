@@ -61,50 +61,55 @@ export const OrderImageGenerator = ({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Load images through proxy to avoid CORS
+    // Load images - use direct loading for local/data URLs, proxy only for external URLs
     const loadImage = async (src: string): Promise<HTMLImageElement> => {
-      try {
-        console.log("Fetching image through proxy:", src);
-        
-        // Use edge function proxy to fetch the image
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ imageUrl: src }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Proxy request failed: ${response.status}`);
-        }
-
-        const { dataUrl, error } = await response.json();
-        
-        if (error) {
-          throw new Error(error);
-        }
-        
-        // Load the data URL into an image
+      // Check if it's a local asset or data URL (no CORS issues)
+      const isLocalOrDataUrl = src.startsWith('data:') || 
+                                src.startsWith('/') || 
+                                src.startsWith('blob:') ||
+                                !src.startsWith('http');
+      
+      if (isLocalOrDataUrl) {
+        // Direct load for local images
         return new Promise((resolve, reject) => {
           const img = new Image();
-          img.onload = () => {
-            console.log("Image loaded successfully:", src);
-            resolve(img);
-          };
-          img.onerror = (e) => {
-            console.error("Failed to load image:", src, e);
-            reject(new Error(`Failed to load image: ${src}`));
-          };
-          img.src = dataUrl;
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+          img.src = src;
         });
-      } catch (error) {
-        console.error("Failed to fetch image:", src, error);
-        throw new Error(`Failed to fetch image: ${src}`);
       }
+      
+      // For external URLs, try direct load first, then proxy
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = async () => {
+          // Fallback to proxy for CORS-blocked images
+          try {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageUrl: src }),
+              }
+            );
+            if (!response.ok) throw new Error('Proxy failed');
+            const { dataUrl, error } = await response.json();
+            if (error) throw new Error(error);
+            
+            const proxyImg = new Image();
+            proxyImg.onload = () => resolve(proxyImg);
+            proxyImg.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+            proxyImg.src = dataUrl;
+          } catch {
+            reject(new Error(`Failed to load image: ${src}`));
+          }
+        };
+        img.src = src;
+      });
     };
 
     try {

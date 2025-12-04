@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { legacyProducts } from "@/data/legacyProducts";
 import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
@@ -31,7 +30,7 @@ const Index = () => {
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [showGenerator, setShowGenerator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("medium");
+  const [viewMode, setViewMode] = useState<ViewMode>("small");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedForEdit, setSelectedForEdit] = useState<string[]>([]);
@@ -50,33 +49,18 @@ const Index = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        setProducts(data.map(p => ({
-          id: p.id,
-          name: p.name,
-          image: p.image,
-          price: p.price || undefined,
-          sku: p.sku || undefined,
-          category: p.category as Product["category"] || undefined,
-        })));
-      } else {
-        // First time load - seed from legacy products
-        setProducts(legacyProducts);
-        // Save legacy products to database
-        for (const product of legacyProducts) {
-          await supabase.from("products").upsert({
-            id: product.id,
-            name: product.name,
-            image: product.image,
-            price: product.price || null,
-            sku: product.sku || null,
-            category: product.category || null,
-          });
-        }
-      }
+      // Set products from database (empty array if no products)
+      setProducts((data || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        image: p.image,
+        price: p.price || undefined,
+        sku: p.sku || undefined,
+        category: p.category as Product["category"] || undefined,
+      })));
     } catch (error) {
       console.error("Error loading products:", error);
-      setProducts(legacyProducts);
+      toast.error("Failed to load products");
     } finally {
       setIsLoadingProducts(false);
     }

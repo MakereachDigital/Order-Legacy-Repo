@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { upscaleImage, needsUpscaling } from "@/lib/imageUpscaler";
 
 interface OrderImageGeneratorProps {
   selectedProducts: Product[];
@@ -114,10 +115,35 @@ export const OrderImageGenerator = ({
 
     try {
       console.log("Starting to load images for", selectedProducts.length, "products");
-      const images = await Promise.all(
+      const loadedImages = await Promise.all(
         selectedProducts.map(product => loadImage(product.image))
       );
-      console.log("All images loaded successfully");
+      
+      // Upscale low-quality images for better thumbnails
+      const targetSize = imgSize; // 600px target
+      const images: HTMLImageElement[] = [];
+      
+      for (const img of loadedImages) {
+        if (needsUpscaling(img, targetSize, targetSize)) {
+          console.log("Upscaling low-quality image:", img.src.substring(0, 50));
+          try {
+            const upscaledDataUrl = await upscaleImage(img, targetSize, targetSize);
+            const upscaledImg = new Image();
+            await new Promise<void>((resolve) => {
+              upscaledImg.onload = () => resolve();
+              upscaledImg.onerror = () => resolve(); // Use original if upscale fails
+              upscaledImg.src = upscaledDataUrl;
+            });
+            images.push(upscaledImg.complete && upscaledImg.naturalWidth > 0 ? upscaledImg : img);
+          } catch {
+            images.push(img); // Use original if upscale fails
+          }
+        } else {
+          images.push(img);
+        }
+      }
+      
+      console.log("All images loaded and upscaled successfully");
 
       images.forEach((img, index) => {
         const row = Math.floor(index / itemsPerRow);

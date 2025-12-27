@@ -162,6 +162,7 @@ const Index = () => {
       return;
     }
     setShowGenerator(true);
+    setSelectedProducts([]);
   };
 
   const handleClearSelection = () => {

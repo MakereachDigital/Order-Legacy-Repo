@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Product } from "@/types/product";
-import { Download, X, MessageCircle, Send, Upload } from "lucide-react";
+import { Download, X, MessageCircle, Send, Upload, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
@@ -24,6 +24,7 @@ export const OrderImageGenerator = ({
 }: OrderImageGeneratorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(initialReceiptFile || null);
   const [receiptPreview, setReceiptPreview] = useState<string>(initialReceiptPreview || "");
 
@@ -49,6 +50,8 @@ export const OrderImageGenerator = ({
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    setIsGenerating(true);
 
     // Calculate grid dimensions with higher resolution
     const itemsPerRow = Math.min(2, selectedProducts.length);
@@ -204,10 +207,12 @@ export const OrderImageGenerator = ({
           console.error("Failed to create blob from canvas");
           toast.error("Failed to generate image");
         }
+        setIsGenerating(false);
       }, "image/png", 1.0); // Maximum quality
     } catch (error) {
       console.error("Error generating order image:", error);
       toast.error("Failed to generate order image. Please try again.");
+      setIsGenerating(false);
     }
   };
 
@@ -370,25 +375,34 @@ export const OrderImageGenerator = ({
 
         {/* Image preview */}
         <div className="flex-1 flex items-center justify-center overflow-auto gap-4">
-          <div className="flex flex-col items-center gap-2">
-            <Label className="text-sm text-muted-foreground">Order Image</Label>
-            {imageUrl && (
-              <img 
-                src={imageUrl} 
-                alt="Order preview" 
-                className="max-w-full max-h-[400px] rounded-lg shadow-xl"
-              />
-            )}
-          </div>
-          {receiptPreview && (
-            <div className="flex flex-col items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Receipt</Label>
-              <img 
-                src={receiptPreview} 
-                alt="Receipt preview" 
-                className="max-w-full max-h-[400px] rounded-lg shadow-xl"
-              />
+          {isGenerating ? (
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-muted-foreground">Generating order image...</p>
             </div>
+          ) : (
+            <>
+              <div className="flex flex-col items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Order Image</Label>
+                {imageUrl && (
+                  <img 
+                    src={imageUrl} 
+                    alt="Order preview" 
+                    className="max-w-full max-h-[400px] rounded-lg shadow-xl"
+                  />
+                )}
+              </div>
+              {receiptPreview && (
+                <div className="flex flex-col items-center gap-2">
+                  <Label className="text-sm text-muted-foreground">Receipt</Label>
+                  <img 
+                    src={receiptPreview} 
+                    alt="Receipt preview" 
+                    className="max-w-full max-h-[400px] rounded-lg shadow-xl"
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -425,6 +439,7 @@ export const OrderImageGenerator = ({
             onClick={handleDownload} 
             className="w-full"
             size="lg"
+            disabled={isGenerating || !imageUrl}
           >
             <Download className="mr-2 h-5 w-5" />
             Download
@@ -435,6 +450,7 @@ export const OrderImageGenerator = ({
               className="flex-1"
               size="lg"
               variant="secondary"
+              disabled={isGenerating || !imageUrl}
             >
               <Send className="mr-2 h-5 w-5" />
               WhatsApp
@@ -444,6 +460,7 @@ export const OrderImageGenerator = ({
               className="flex-1"
               size="lg"
               variant="secondary"
+              disabled={isGenerating || !imageUrl}
             >
               <MessageCircle className="mr-2 h-5 w-5" />
               Messenger

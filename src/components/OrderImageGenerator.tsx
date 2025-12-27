@@ -10,6 +10,7 @@ import { upscaleImage, needsUpscaling } from "@/lib/imageUpscaler";
 interface OrderImageGeneratorProps {
   selectedProducts: Product[];
   onClose: () => void;
+  onResetSelection: () => void;
   initialReceiptFile?: File | null;
   initialReceiptPreview?: string;
 }
@@ -17,6 +18,7 @@ interface OrderImageGeneratorProps {
 export const OrderImageGenerator = ({ 
   selectedProducts, 
   onClose,
+  onResetSelection,
   initialReceiptFile,
   initialReceiptPreview 
 }: OrderImageGeneratorProps) => {
@@ -219,6 +221,8 @@ export const OrderImageGenerator = ({
     link.href = imageUrl;
     link.click();
     toast.success("Image downloaded successfully!");
+    onResetSelection();
+    onClose();
   };
 
   const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,6 +266,8 @@ export const OrderImageGenerator = ({
           text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
         });
         toast.success("Sharing to WhatsApp...");
+        onResetSelection();
+        onClose();
       } else {
         // Desktop fallback: Download images and open WhatsApp Web
         const link = document.createElement("a");
@@ -284,6 +290,8 @@ export const OrderImageGenerator = ({
           const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
           window.open(whatsappUrl, "_blank");
           toast.success("Images downloaded! Please attach them in WhatsApp");
+          onResetSelection();
+          onClose();
         }, 700);
       }
     } catch (error) {
@@ -316,6 +324,8 @@ export const OrderImageGenerator = ({
           text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
         });
         toast.success("Sharing to Messenger...");
+        onResetSelection();
+        onClose();
       } else {
         // Desktop fallback: Download images and open Messenger
         const link = document.createElement("a");
@@ -337,6 +347,8 @@ export const OrderImageGenerator = ({
           const messengerUrl = `https://www.facebook.com/messages/t/`;
           window.open(messengerUrl, "_blank");
           toast.success("Images downloaded! Please attach them in Messenger");
+          onResetSelection();
+          onClose();
         }, 700);
       }
     } catch (error) {

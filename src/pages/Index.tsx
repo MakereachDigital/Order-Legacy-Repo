@@ -568,6 +568,7 @@ const Index = () => {
             setReceiptFile(null);
             setReceiptPreview("");
           }}
+          onResetSelection={() => setSelectedProducts([])}
           initialReceiptFile={receiptFile}
           initialReceiptPreview={receiptPreview}
         />

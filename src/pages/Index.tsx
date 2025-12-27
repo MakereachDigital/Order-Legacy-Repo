@@ -28,6 +28,7 @@ const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [generatorProducts, setGeneratorProducts] = useState<Product[]>([]);
   const [showGenerator, setShowGenerator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("small");
@@ -161,6 +162,7 @@ const Index = () => {
       toast.error("Please select at least one product");
       return;
     }
+    setGeneratorProducts([...selectedProducts]);
     setShowGenerator(true);
     setSelectedProducts([]);
   };
@@ -563,9 +565,10 @@ const Index = () => {
       {/* Order Image Generator Modal */}
       {showGenerator && (
         <OrderImageGenerator
-          selectedProducts={selectedProducts}
+          selectedProducts={generatorProducts}
           onClose={() => {
             setShowGenerator(false);
+            setGeneratorProducts([]);
             setReceiptFile(null);
             setReceiptPreview("");
           }}

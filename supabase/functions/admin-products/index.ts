@@ -32,6 +32,30 @@ function safeString(value: unknown, field: string, { required = false, max = 2_0
   return trimmed;
 }
 
+function validatePrice(value: unknown, field: string): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") throw new Error(`Invalid field type: ${field}`);
+  
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "") return null;
+  
+  // Allow numeric formats: integers or decimals with up to 2 decimal places
+  // Examples: "0", "100", "99.99", "1234.5"
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
+    throw new Error(`Invalid price format: ${field}. Must be a positive number with up to 2 decimal places.`);
+  }
+  
+  const numPrice = parseFloat(trimmed);
+  if (numPrice < 0) {
+    throw new Error(`Price cannot be negative: ${field}`);
+  }
+  if (numPrice > 99999999.99) {
+    throw new Error(`Price exceeds maximum value: ${field}`);
+  }
+  
+  return trimmed;
+}
+
 function normalizeCategory(value: unknown): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null) return null;
@@ -49,7 +73,7 @@ function toDbProduct(input: any) {
   const name = safeString(input?.name, "product.name", { required: true, max: 500 });
   const image = safeString(input?.image, "product.image", { required: true });
 
-  const price = safeString(input?.price, "product.price", { required: false, max: 200 }) ?? null;
+  const price = validatePrice(input?.price, "product.price");
   const sku = safeString(input?.sku, "product.sku", { required: false, max: 200 }) ?? null;
   const category = normalizeCategory(input?.category);
 
@@ -174,7 +198,7 @@ serve(async (req) => {
       const updateData: Record<string, string | null> = {};
       const name = safeString(updatesInput.name, "updates.name", { required: false, max: 500 });
       const image = safeString(updatesInput.image, "updates.image", { required: false });
-      const price = safeString(updatesInput.price, "updates.price", { required: false, max: 200 });
+      const price = validatePrice(updatesInput.price, "updates.price");
       const sku = safeString(updatesInput.sku, "updates.sku", { required: false, max: 200 });
       const category = normalizeCategory(updatesInput.category);
 
@@ -211,7 +235,7 @@ serve(async (req) => {
 
         const updateData: Record<string, string | null> = {};
         const name = safeString(updatesInput.name, "updates[].updates.name", { required: false, max: 500 });
-        const price = safeString(updatesInput.price, "updates[].updates.price", { required: false, max: 200 });
+        const price = validatePrice(updatesInput.price, "updates[].updates.price");
         const category = normalizeCategory(updatesInput.category);
 
         if (name !== undefined) updateData.name = name;

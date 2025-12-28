@@ -18,12 +18,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import { Product } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -38,6 +37,20 @@ const Index = () => {
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string>("");
+
+  const loadPermissions = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-products", {
+        body: { action: "get_permissions" },
+      });
+
+      if (error) throw error;
+      setIsAdmin(Boolean((data as any)?.isAdmin));
+    } catch (error) {
+      console.error("[INTERNAL] Permissions load error:", error);
+      setIsAdmin(false);
+    }
+  }, []);
 
   // Load products from database
   const loadProducts = useCallback(async () => {
@@ -71,13 +84,13 @@ const Index = () => {
   // Authentication setup
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
+      (_event, session) => {
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+
+        if (nextUser) {
           setTimeout(() => {
-            checkAdminRole(session.user.id);
+            void loadPermissions();
           }, 0);
         } else {
           setIsAdmin(false);
@@ -86,35 +99,23 @@ const Index = () => {
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdminRole(session.user.id);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+
+      if (nextUser) {
+        void loadPermissions();
+      } else {
+        setIsAdmin(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [loadPermissions]);
 
   // Load products on mount
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
-
-  const checkAdminRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .single();
-
-    if (!error && data) {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -179,64 +180,61 @@ const Index = () => {
       .filter((num) => num !== -1);
   };
 
+  const invokeAdminProducts = useCallback(async (body: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("admin-products", {
+      body,
+    });
+
+    if (error) throw error;
+    return data as any;
+  }, []);
+
   const handleAddProduct = async (product: Product) => {
-    setProducts((prev) => [...prev, product]);
-    // Save to database
+    // Save to database (server-side role check)
     try {
-      await supabase.from("products").insert({
-        id: product.id,
-        name: product.name,
-        image: product.image,
-        price: product.price || null,
-        sku: product.sku || null,
-        category: product.category || null,
-      });
+      await invokeAdminProducts({ action: "insert", product });
+      setProducts((prev) => [...prev, product]);
     } catch (error) {
-      console.error("[INTERNAL] Product save error:", error);
-      toast.error("Unable to save product. Please try again.");
+      console.error("[INTERNAL] Product insert error:", error);
+      toast.error("You don't have permission to add products.");
     }
   };
 
   const handleImportProducts = async (importedProducts: Product[]) => {
-    setProducts((prev) => [...prev, ...importedProducts]);
-    // Save to database
     try {
-      for (const product of importedProducts) {
-        await supabase.from("products").insert({
-          id: product.id,
-          name: product.name,
-          image: product.image,
-          price: product.price || null,
-          sku: product.sku || null,
-          category: product.category || null,
-        });
-      }
+      await invokeAdminProducts({ action: "bulk_insert", products: importedProducts });
+      setProducts((prev) => [...prev, ...importedProducts]);
     } catch (error) {
       console.error("[INTERNAL] Import products error:", error);
-      toast.error("Unable to import some products. Please try again.");
+      toast.error("You don't have permission to import products.");
     }
   };
 
   const handleEditProduct = async (updatedProduct: Product) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
-    // Update selected products as well
-    setSelectedProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
-    // Save to database
     try {
-      await supabase.from("products").update({
-        name: updatedProduct.name,
-        image: updatedProduct.image,
-        price: updatedProduct.price || null,
-        sku: updatedProduct.sku || null,
-        category: updatedProduct.category || null,
-      }).eq("id", updatedProduct.id);
+      await invokeAdminProducts({
+        action: "update",
+        id: updatedProduct.id,
+        updates: {
+          name: updatedProduct.name,
+          image: updatedProduct.image,
+          price: updatedProduct.price ?? null,
+          sku: updatedProduct.sku ?? null,
+          category: updatedProduct.category ?? null,
+        },
+      });
+
+      setProducts((prev) =>
+        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      );
+
+      // Update selected products as well
+      setSelectedProducts((prev) =>
+        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      );
     } catch (error) {
       console.error("[INTERNAL] Product update error:", error);
-      toast.error("Unable to update product. Please try again.");
+      toast.error("You don't have permission to edit products.");
     }
   };
 
@@ -247,62 +245,68 @@ const Index = () => {
     namePrefix?: string;
     nameSuffix?: string;
   }) => {
-    setProducts((prev) =>
-      prev.map((p) => {
-        if (!productIds.includes(p.id)) return p;
-        
-        let updated = { ...p };
-        if (changes.category) updated.category = changes.category;
-        if (changes.namePrefix || changes.nameSuffix) {
-          updated.name = `${changes.namePrefix || ""}${p.name}${changes.nameSuffix || ""}`;
-        }
-        if (changes.pricePrefix || changes.priceSuffix) {
-          const currentPrice = p.price || "";
-          updated.price = `${changes.pricePrefix || ""}${currentPrice}${changes.priceSuffix || ""}`;
-        }
-        return updated;
-      })
-    );
-    toast.success(`Updated ${productIds.length} product(s)`);
-    setSelectedForEdit([]);
-    
-    // Update in database
-    try {
-      for (const id of productIds) {
-        const product = products.find(p => p.id === id);
-        if (!product) continue;
-        
-        const updateData: Record<string, string | null> = {};
-        if (changes.category) updateData.category = changes.category;
-        if (changes.namePrefix || changes.nameSuffix) {
-          updateData.name = `${changes.namePrefix || ""}${product.name}${changes.nameSuffix || ""}`;
-        }
-        if (changes.pricePrefix || changes.priceSuffix) {
-          updateData.price = `${changes.pricePrefix || ""}${product.price || ""}${changes.priceSuffix || ""}`;
-        }
-        
-        if (Object.keys(updateData).length > 0) {
-          await supabase.from("products").update(updateData).eq("id", id);
-        }
+    const updatesPayload: Array<{ id: string; updates: Partial<Product> }> = [];
+
+    for (const id of productIds) {
+      const existing = products.find((p) => p.id === id);
+      if (!existing) continue;
+
+      const updates: Partial<Product> = {};
+
+      if (changes.category) updates.category = changes.category;
+
+      if (changes.namePrefix || changes.nameSuffix) {
+        updates.name = `${changes.namePrefix || ""}${existing.name}${changes.nameSuffix || ""}`;
       }
+
+      if (changes.pricePrefix || changes.priceSuffix) {
+        const currentPrice = existing.price || "";
+        updates.price = `${changes.pricePrefix || ""}${currentPrice}${changes.priceSuffix || ""}`;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        updatesPayload.push({ id, updates });
+      }
+    }
+
+    if (updatesPayload.length === 0) return;
+
+    try {
+      await invokeAdminProducts({ action: "bulk_update", updates: updatesPayload });
+
+      const updatesById = new Map<string, Partial<Product>>(
+        updatesPayload.map((u) => [u.id, u.updates])
+      );
+
+      setProducts((prev) =>
+        prev.map((p) => {
+          const u = updatesById.get(p.id);
+          return u ? { ...p, ...u } : p;
+        })
+      );
+
+      toast.success(`Updated ${updatesPayload.length} product(s)`);
+      setSelectedForEdit([]);
     } catch (error) {
       console.error("[INTERNAL] Bulk update error:", error);
-      toast.error("Unable to update some products. Please try again.");
+      toast.error("You don't have permission to edit products.");
+      // Re-sync UI with database
+      void loadProducts();
     }
   };
 
   const handleBulkDelete = async (productIds: string[]) => {
-    setProducts((prev) => prev.filter((p) => !productIds.includes(p.id)));
-    toast.success(`Deleted ${productIds.length} product(s)`);
-    setSelectedForEdit([]);
-    // Delete from database
     try {
-      for (const id of productIds) {
-        await supabase.from("products").delete().eq("id", id);
-      }
+      await invokeAdminProducts({ action: "bulk_delete", ids: productIds });
+
+      setProducts((prev) => prev.filter((p) => !productIds.includes(p.id)));
+      toast.success(`Deleted ${productIds.length} product(s)`);
+      setSelectedForEdit([]);
     } catch (error) {
       console.error("[INTERNAL] Delete products error:", error);
-      toast.error("Unable to delete some products. Please try again.");
+      toast.error("You don't have permission to delete products.");
+      // Re-sync UI with database
+      void loadProducts();
     }
   };
 
@@ -475,7 +479,7 @@ const Index = () => {
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-              {!isEditMode && user && <AddProductDialog onAddProduct={handleAddProduct} />}
+              {!isEditMode && user && isAdmin && <AddProductDialog onAddProduct={handleAddProduct} />}
               {!isEditMode && selectedProducts.length > 0 && (
                 <Button
                   onClick={handleClearSelection}

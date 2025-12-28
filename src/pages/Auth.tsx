@@ -63,8 +63,9 @@ export default function Auth() {
         toast.success("Account created successfully!");
       }
     } catch (error: any) {
-      console.error("Auth error:", error);
-      toast.error(error.message || "An error occurred");
+      // Log internally without exposing to users
+      console.error("[INTERNAL] Auth error:", error);
+      toast.error("Authentication failed. Please check your credentials and try again.");
     } finally {
       setIsLoading(false);
     }

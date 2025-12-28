@@ -54,8 +54,8 @@ export const ImportProductsDialog = ({ onImportProducts }: ImportProductsDialogP
           });
         }
       } catch (error) {
-        console.error(`Failed to scrape ${urlList[i]}:`, error);
-        toast.error(`Failed to import product ${i + 1}`);
+        console.error("[INTERNAL] URL import error:", error);
+        toast.error(`Unable to import product ${i + 1}. Please try again.`);
       }
     }
 
@@ -123,8 +123,8 @@ export const ImportProductsDialog = ({ onImportProducts }: ImportProductsDialogP
           toast.error("No valid products found in CSV");
         }
       } catch (error) {
-        console.error("CSV parsing error:", error);
-        toast.error("Failed to parse CSV file");
+        console.error("[INTERNAL] CSV parsing error:", error);
+        toast.error("Unable to parse CSV file. Please check the format and try again.");
       }
     };
     reader.readAsText(file);

@@ -60,8 +60,9 @@ const Index = () => {
         category: p.category as Product["category"] || undefined,
       })));
     } catch (error) {
-      console.error("Error loading products:", error);
-      toast.error("Failed to load products");
+      // Internal logging only
+      console.error("[INTERNAL] Products load error:", error);
+      toast.error("Unable to load products. Please try again.");
     } finally {
       setIsLoadingProducts(false);
     }
@@ -191,7 +192,8 @@ const Index = () => {
         category: product.category || null,
       });
     } catch (error) {
-      console.error("Error saving product:", error);
+      console.error("[INTERNAL] Product save error:", error);
+      toast.error("Unable to save product. Please try again.");
     }
   };
 
@@ -210,7 +212,8 @@ const Index = () => {
         });
       }
     } catch (error) {
-      console.error("Error saving imported products:", error);
+      console.error("[INTERNAL] Import products error:", error);
+      toast.error("Unable to import some products. Please try again.");
     }
   };
 
@@ -232,7 +235,8 @@ const Index = () => {
         category: updatedProduct.category || null,
       }).eq("id", updatedProduct.id);
     } catch (error) {
-      console.error("Error updating product:", error);
+      console.error("[INTERNAL] Product update error:", error);
+      toast.error("Unable to update product. Please try again.");
     }
   };
 
@@ -282,7 +286,8 @@ const Index = () => {
         }
       }
     } catch (error) {
-      console.error("Error updating products:", error);
+      console.error("[INTERNAL] Bulk update error:", error);
+      toast.error("Unable to update some products. Please try again.");
     }
   };
 
@@ -296,7 +301,8 @@ const Index = () => {
         await supabase.from("products").delete().eq("id", id);
       }
     } catch (error) {
-      console.error("Error deleting products:", error);
+      console.error("[INTERNAL] Delete products error:", error);
+      toast.error("Unable to delete some products. Please try again.");
     }
   };
 

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,39 @@ serve(async (req) => {
   }
 
   try {
+    // Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('Request rejected: missing Authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.log('Request rejected: invalid JWT', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('Authenticated user:', user.id);
+
     const { imageBase64 } = await req.json();
     
     if (!imageBase64) {
@@ -86,7 +120,7 @@ Rules:
       throw new Error("No response from AI");
     }
 
-    console.log("AI Response:", content);
+    console.log("AI Response received");
 
     // Parse the JSON from the response
     let extractedProducts;
@@ -95,11 +129,11 @@ Rules:
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       extractedProducts = JSON.parse(cleanContent);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      console.error("Failed to parse AI response");
       throw new Error("Invalid JSON response from AI");
     }
 
-    console.log("Extracted products:", extractedProducts);
+    console.log("Extracted products count:", extractedProducts.length);
 
     return new Response(
       JSON.stringify({ products: extractedProducts }),
@@ -109,9 +143,8 @@ Rules:
     );
   } catch (error) {
     console.error("Error in extract-receipt function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred processing your request' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

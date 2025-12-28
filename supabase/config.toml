@@ -1,7 +1,7 @@
 project_id = "sphublhnuetbuqaqgalo"
 
 [functions.image-proxy]
-verify_jwt = false
+verify_jwt = true
 
 [functions.extract-receipt]
 verify_jwt = true

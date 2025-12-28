@@ -73,8 +73,8 @@ export const ReceiptUploader = ({
         toast.success(`Found ${products.length} product(s)!`);
       }
     } catch (error) {
-      console.error("Error extracting products:", error);
-      toast.error("Failed to extract products from receipt");
+      console.error("[INTERNAL] Receipt extraction error:", error);
+      toast.error("Unable to extract products from receipt. Please try again.");
     } finally {
       setIsProcessing(false);
     }

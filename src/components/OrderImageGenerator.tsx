@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { Product } from "@/types/product";
-import { Download, X, MessageCircle, Send, Upload, Loader2 } from "lucide-react";
+import { Download, X, MessageCircle, Send, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
@@ -94,18 +95,14 @@ export const OrderImageGenerator = ({
         img.onerror = async () => {
           // Fallback to proxy for CORS-blocked images
           try {
-            const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imageUrl: src }),
-              }
-            );
-            if (!response.ok) throw new Error('Proxy failed');
-            const { dataUrl, error } = await response.json();
-            if (error) throw new Error(error);
-            
+            const { data, error } = await supabase.functions.invoke("image-proxy", {
+              body: { imageUrl: src },
+            });
+            if (error) throw error;
+
+            const dataUrl = (data as any)?.dataUrl as string | undefined;
+            if (!dataUrl) throw new Error("Proxy failed");
+
             const proxyImg = new Image();
             proxyImg.onload = () => resolve(proxyImg);
             proxyImg.onerror = () => reject(new Error(`Failed to load image: ${src}`));

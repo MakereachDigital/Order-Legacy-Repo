@@ -104,8 +104,8 @@ export const ReceiptUploader = ({
   };
 
   return (
-    <div className="border border-border rounded-lg p-4 bg-card space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="border border-border rounded-lg p-4 bg-card space-y-4 max-h-full overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between shrink-0">
         <Label className="text-base font-semibold">Smart Receipt Upload</Label>
         {receiptFile && (
           <Button onClick={handleReset} variant="ghost" size="sm">
@@ -115,8 +115,8 @@ export const ReceiptUploader = ({
         )}
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
+      <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
+        <div className="flex items-center gap-2 shrink-0">
           <Input
             type="file"
             accept="image/*"
@@ -137,28 +137,29 @@ export const ReceiptUploader = ({
         </div>
 
         {receiptPreview && !showResults && (
-          <div className="relative w-full mx-auto overflow-auto max-h-[60vh]">
+          <div className="relative w-full mx-auto flex-1 min-h-0">
             <img
               src={receiptPreview}
               alt="Receipt preview"
-              className="w-full h-auto rounded-lg border border-border object-contain"
+              className="w-full h-full rounded-lg border border-border object-contain"
             />
           </div>
         )}
 
         {showResults && (
-          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-            {receiptPreview && (
-              <div className="relative w-full mx-auto overflow-auto max-h-[40vh]">
-                <img
-                  src={receiptPreview}
-                  alt="Receipt preview"
-                  className="w-full h-auto rounded-lg border border-border object-contain"
-                />
-              </div>
+          <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
+            {extractedProducts.length > 0 && (
+              <Button 
+                onClick={handleAutoSelect} 
+                className="w-full shrink-0" 
+                size="lg"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Auto-Select These Products
+              </Button>
             )}
 
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg sticky top-0 z-10">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg shrink-0">
               <div className="flex items-center gap-2">
                 {extractedProducts.length > 0 ? (
                   <>
@@ -176,46 +177,45 @@ export const ReceiptUploader = ({
               </div>
             </div>
 
-            {extractedProducts.length > 0 && (
-              <>
-                <div className="space-y-2">
-                  {extractedProducts.map((product, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between gap-2 p-2 bg-background rounded border border-border"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{product.name}</p>
-                        {product.sku && (
-                          <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-sm font-semibold px-2 py-1 bg-primary/10 text-primary rounded">
-                          x{product.quantity}
-                        </span>
-                        <Button
-                          onClick={() => handleRemoveProduct(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {receiptPreview && (
+              <div className="relative w-full mx-auto flex-1 min-h-0">
+                <img
+                  src={receiptPreview}
+                  alt="Receipt preview"
+                  className="w-full h-full rounded-lg border border-border object-contain"
+                />
+              </div>
+            )}
 
-                <Button 
-                  onClick={handleAutoSelect} 
-                  className="w-full sticky bottom-0 z-10" 
-                  size="lg"
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Auto-Select These Products
-                </Button>
-              </>
+            {extractedProducts.length > 0 && (
+              <div className="space-y-2 shrink-0 max-h-32 overflow-y-auto">
+                {extractedProducts.map((product, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between gap-2 p-2 bg-background rounded border border-border"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{product.name}</p>
+                      {product.sku && (
+                        <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-semibold px-2 py-1 bg-primary/10 text-primary rounded">
+                        x{product.quantity}
+                      </span>
+                      <Button
+                        onClick={() => handleRemoveProduct(index)}
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

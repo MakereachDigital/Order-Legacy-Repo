@@ -1,10 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+
+  return btoa(binary);
+}
 
 // Validate URL to prevent SSRF attacks
 function isValidImageUrl(url: string): boolean {
@@ -70,47 +80,15 @@ serve(async (req) => {
   }
 
   try {
-    // Verify JWT authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.log('Request rejected: missing Authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.log('Request rejected: invalid JWT', authError?.message);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('Authenticated user:', user.id);
-
-    const { imageUrl } = await req.json();
+    const body = await req.json().catch(() => ({} as any));
+    const imageUrl = body?.imageUrl as string | undefined;
 
     if (!imageUrl) {
       return new Response(
         JSON.stringify({ error: 'Image URL is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -136,14 +114,8 @@ serve(async (req) => {
       throw new Error(`Failed to fetch image: ${response.status}`);
     }
 
-    const blob = await response.blob();
-    const buffer = await blob.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(buffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        ''
-      )
-    );
+    const buffer = new Uint8Array(await response.arrayBuffer());
+    const base64 = uint8ToBase64(buffer);
 
     const contentType = response.headers.get('content-type') || 'image/jpeg';
     const dataUrl = `data:${contentType};base64,${base64}`;

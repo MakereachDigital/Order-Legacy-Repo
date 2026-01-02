@@ -355,6 +355,8 @@ const Index = () => {
       
       // Close receipt dialog and auto-open generator with receipt attached
       setShowReceiptDialog(false);
+      // Set generator products BEFORE showing generator
+      setGeneratorProducts(newSelectedProducts);
       setTimeout(() => {
         setShowGenerator(true);
       }, 300);

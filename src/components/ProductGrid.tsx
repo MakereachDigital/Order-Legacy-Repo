@@ -1,6 +1,7 @@
 import { Product } from "@/types/product";
 import { ProductCard } from "./ProductCard";
 import { ViewMode } from "./ViewToggle";
+import { cn } from "@/lib/utils";
 
 interface ProductGridProps {
   products: Product[];
@@ -36,29 +37,34 @@ export const ProductGrid = ({
       case "medium":
         return "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4";
       case "large":
-        return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4";
+        return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 p-4";
       default:
         return "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4";
     }
   };
 
   return (
-    <div className={getGridClasses()}>
-      {products.map((product) => {
+    <div className={cn(getGridClasses(), "container mx-auto")}>
+      {products.map((product, index) => {
         const selectionNumbers = getSelectionNumbers(product.id);
         const isSelectedForEdit = selectedForEdit.includes(product.id);
         return (
-          <ProductCard
-            key={product.id}
-            product={product}
-            selectionNumbers={selectionNumbers}
-            onToggle={() => onToggleProduct(product)}
-            onEdit={onEditProduct}
-            viewMode={viewMode}
-            isEditMode={isEditMode}
-            isSelectedForEdit={isSelectedForEdit}
-            isAuthenticated={isAuthenticated}
-          />
+          <div 
+            key={product.id} 
+            className="animate-fade-in"
+            style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
+          >
+            <ProductCard
+              product={product}
+              selectionNumbers={selectionNumbers}
+              onToggle={() => onToggleProduct(product)}
+              onEdit={onEditProduct}
+              viewMode={viewMode}
+              isEditMode={isEditMode}
+              isSelectedForEdit={isSelectedForEdit}
+              isAuthenticated={isAuthenticated}
+            />
+          </div>
         );
       })}
     </div>

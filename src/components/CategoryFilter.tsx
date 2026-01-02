@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Tag } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CategoryFilterProps {
   selectedCategory: string | null;
@@ -10,29 +10,36 @@ export const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryF
   const categories = ["Cufflinks", "Ties"];
 
   return (
-    <div className="flex items-center gap-2">
-      <Tag className="h-4 w-4 text-muted-foreground" />
-      <div className="flex gap-1">
+    <div className="flex items-center gap-1 bg-muted/60 rounded-xl p-1 border border-border/50">
+      <Button
+        onClick={() => onCategoryChange(null)}
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "h-7 px-3 text-xs rounded-lg font-medium transition-all duration-200",
+          selectedCategory === null 
+            ? "bg-card shadow-soft text-primary" 
+            : "hover:bg-card/50 text-muted-foreground"
+        )}
+      >
+        All
+      </Button>
+      {categories.map((category) => (
         <Button
-          onClick={() => onCategoryChange(null)}
-          variant={selectedCategory === null ? "default" : "ghost"}
+          key={category}
+          onClick={() => onCategoryChange(category)}
+          variant="ghost"
           size="sm"
-          className="h-7 px-2 text-xs"
+          className={cn(
+            "h-7 px-3 text-xs rounded-lg font-medium transition-all duration-200",
+            selectedCategory === category 
+              ? "bg-card shadow-soft text-primary" 
+              : "hover:bg-card/50 text-muted-foreground"
+          )}
         >
-          All
+          {category}
         </Button>
-        {categories.map((category) => (
-          <Button
-            key={category}
-            onClick={() => onCategoryChange(category)}
-            variant={selectedCategory === category ? "default" : "ghost"}
-            size="sm"
-            className="h-7 px-2 text-xs"
-          >
-            {category}
-          </Button>
-        ))}
-      </div>
+      ))}
     </div>
   );
 };

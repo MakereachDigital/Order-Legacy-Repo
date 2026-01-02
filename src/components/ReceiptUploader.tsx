@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Upload, Loader2, Trash2 } from "lucide-react";
+import { Upload, Loader2, Trash2, Image as ImageIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface ExtractedProduct {
   sku: string;
@@ -87,20 +88,36 @@ export const ReceiptUploader = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">Receipt Image</Label>
+        <Label className="text-sm font-semibold text-foreground">Receipt Image</Label>
         {receiptFile && (
-          <Button onClick={handleReset} variant="ghost" size="sm" className="h-7 text-xs">
-            <Trash2 className="h-3 w-3 mr-1" />
+          <Button 
+            onClick={handleReset} 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 text-xs text-muted-foreground hover:text-destructive gap-1.5"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
             Clear
           </Button>
         )}
       </div>
       
       {!receiptPreview ? (
-        <label className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors">
-          <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-          <span className="text-sm text-muted-foreground">Click to upload receipt</span>
-          <span className="text-xs text-muted-foreground/70 mt-1">Max 10MB</span>
+        <label className={cn(
+          "flex flex-col items-center justify-center h-72 rounded-xl cursor-pointer",
+          "border-2 border-dashed border-border/80",
+          "bg-muted/30 hover:bg-muted/50 hover:border-primary/50",
+          "transition-all duration-300 group"
+        )}>
+          <div className="flex flex-col items-center gap-3">
+            <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
+              <ImageIcon className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+            </div>
+            <div className="text-center">
+              <span className="text-sm font-medium text-foreground">Click to upload receipt</span>
+              <span className="block text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</span>
+            </div>
+          </div>
           <Input
             type="file"
             accept="image/*"
@@ -110,16 +127,19 @@ export const ReceiptUploader = ({
           />
         </label>
       ) : (
-        <div className="relative h-64 border border-border rounded-lg overflow-hidden bg-muted/30">
+        <div className="relative h-72 rounded-xl overflow-hidden bg-muted/20 border border-border/60">
           <img
             src={receiptPreview}
             alt="Receipt preview"
             className="w-full h-full object-contain"
           />
           {isProcessing && (
-            <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-              <span className="text-sm text-muted-foreground">Extracting products...</span>
+            <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in">
+              <div className="p-4 rounded-full bg-primary/10 mb-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Extracting products...</span>
+              <span className="text-xs text-muted-foreground mt-1">This may take a moment</span>
             </div>
           )}
         </div>

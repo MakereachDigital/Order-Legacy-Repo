@@ -369,20 +369,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Compact Sticky Header */}
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-b border-border shadow-sm">
-        <div className="container mx-auto px-3 py-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="bg-primary p-1.5 rounded-md">
-                <Package className="h-3.5 w-3.5 text-primary-foreground" />
+      {/* Modern Sticky Header */}
+      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 shadow-soft">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Logo & Brand */}
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-glow">
+                <Package className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-foreground leading-none">Legacy Dhaka</h1>
-                <p className="text-[10px] text-muted-foreground">Order Manager</p>
+                <h1 className="text-base font-bold text-foreground leading-none tracking-tight">Legacy Dhaka</h1>
+                <p className="text-[11px] text-muted-foreground font-medium">Order Manager</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
+            
+            {/* Right Actions */}
+            <div className="flex items-center gap-2">
               <CategoryFilter 
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
@@ -392,8 +395,8 @@ const Index = () => {
                 <Button
                   onClick={handleLogout}
                   variant="ghost"
-                  size="sm"
-                  className="h-8"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -401,8 +404,8 @@ const Index = () => {
                 <Button
                   onClick={() => navigate("/auth")}
                   variant="ghost"
-                  size="sm"
-                  className="h-8"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl"
                 >
                   <LogIn className="h-4 w-4" />
                 </Button>
@@ -413,9 +416,9 @@ const Index = () => {
       </header>
 
       {/* Search & Actions Bar */}
-      <div className="sticky top-[53px] z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
-        <div className="container mx-auto px-3 py-2.5">
-          <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
+      <div className="sticky top-[65px] z-40 glass border-b border-border/40">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
             <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
               
@@ -426,13 +429,13 @@ const Index = () => {
                     <TooltipTrigger asChild>
                       <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0 shrink-0">
+                          <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-xl">
                             <FileText className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Smart Receipt Upload</DialogTitle>
+                            <DialogTitle className="text-lg font-semibold">Smart Receipt Upload</DialogTitle>
                           </DialogHeader>
                           <ReceiptUploader
                             onProductsExtracted={handleProductsExtracted}
@@ -487,7 +490,7 @@ const Index = () => {
                   onClick={handleClearSelection}
                   variant="ghost"
                   size="sm"
-                  className="h-8"
+                  className="h-9 text-muted-foreground hover:text-destructive"
                 >
                   Clear ({selectedProducts.length})
                 </Button>
@@ -498,11 +501,13 @@ const Index = () => {
       </div>
 
       {/* Product Grid */}
-      <main className="pb-24">
+      <main className="pb-28 animate-fade-in">
         {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <Package className="h-16 w-16 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
+          <div className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+              <Package className="h-12 w-12 text-muted-foreground/50" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">No products found</h3>
             <p className="text-sm text-muted-foreground">Try adjusting your search or add a custom product</p>
           </div>
         ) : (
@@ -534,15 +539,15 @@ const Index = () => {
 
       {/* Bottom Action Bar with Thumbnails */}
       {!isEditMode && selectedProducts.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 border-t border-border shadow-lg">
-          <div className="container mx-auto px-4 py-3 space-y-3">
+        <div className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/50 shadow-soft-lg animate-slide-up">
+          <div className="container mx-auto px-4 py-4 space-y-3">
             {/* Thumbnail Strip */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
             {selectedProducts.map((product, index) => (
               <div
                 key={index}
                 onClick={() => handleRemoveSelection(index)}
-                className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-primary cursor-pointer hover:opacity-75 transition-opacity"
+                className="relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 border-primary/60 cursor-pointer hover:border-destructive hover:scale-95 transition-all duration-200 shadow-soft"
               >
                 <img
                   src={product.image}
@@ -550,11 +555,11 @@ const Index = () => {
                   className="w-full h-full object-cover"
                 />
                 {product.sku && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[8px] font-bold text-center py-0.5 truncate px-1">
+                  <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[7px] font-bold text-center py-0.5 truncate px-0.5">
                     {product.sku}
                   </div>
                 )}
-                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-bl-lg flex items-center justify-center">
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] rounded-bl-lg flex items-center justify-center px-1">
                   {index + 1}
                 </div>
               </div>
@@ -564,7 +569,7 @@ const Index = () => {
             {/* Generate Button */}
             <Button
               onClick={handleGenerateImage}
-              className="w-full"
+              className="w-full h-12 text-base font-semibold shadow-glow hover:shadow-glow-lg transition-all duration-300"
               size="lg"
             >
               <ImageIcon className="mr-2 h-5 w-5" />

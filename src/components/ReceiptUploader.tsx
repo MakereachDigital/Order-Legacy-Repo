@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, X, Check, AlertCircle } from "lucide-react";
+import { Upload, X, Check, AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
@@ -104,121 +104,135 @@ export const ReceiptUploader = ({
   };
 
   return (
-    <div className="border border-border rounded-lg p-4 bg-card space-y-4 max-h-full overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between shrink-0">
-        <Label className="text-base font-semibold">Smart Receipt Upload</Label>
-        {receiptFile && (
-          <Button onClick={handleReset} variant="ghost" size="sm">
-            <X className="h-4 w-4 mr-1" />
-            Clear
-          </Button>
-        )}
-      </div>
+    <div className="space-y-4">
+      {/* Auto-Select Button - Always on top when results are shown */}
+      {showResults && extractedProducts.length > 0 && (
+        <Button 
+          onClick={handleAutoSelect} 
+          className="w-full" 
+          size="lg"
+        >
+          <Check className="h-4 w-4 mr-2" />
+          Auto-Select These Products ({extractedProducts.length})
+        </Button>
+      )}
 
-      <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
-        <div className="flex items-center gap-2 shrink-0">
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={handleReceiptUpload}
-            className="flex-1"
-            disabled={isProcessing}
-          />
-          {receiptFile && !showResults && (
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left: Receipt Preview - Fixed Size */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">Receipt Image</Label>
+            {receiptFile && (
+              <Button onClick={handleReset} variant="ghost" size="sm" className="h-7 text-xs">
+                <Trash2 className="h-3 w-3 mr-1" />
+                Clear
+              </Button>
+            )}
+          </div>
+          
+          {!receiptPreview ? (
+            <label className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors">
+              <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+              <span className="text-sm text-muted-foreground">Click to upload receipt</span>
+              <span className="text-xs text-muted-foreground/70 mt-1">Max 10MB</span>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleReceiptUpload}
+                className="hidden"
+                disabled={isProcessing}
+              />
+            </label>
+          ) : (
+            <div className="relative h-64 border border-border rounded-lg overflow-hidden bg-muted/30">
+              <img
+                src={receiptPreview}
+                alt="Receipt preview"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
+
+          {/* Extract Button */}
+          {receiptPreview && !showResults && (
             <Button
               onClick={handleExtractProducts}
               disabled={isProcessing}
-              variant="default"
+              className="w-full"
+              size="lg"
             >
-              <Upload className="h-4 w-4 mr-1" />
-              {isProcessing ? "Processing..." : "Extract"}
+              <Upload className="h-4 w-4 mr-2" />
+              {isProcessing ? "Processing..." : "Extract Products"}
             </Button>
           )}
         </div>
 
-        {receiptPreview && !showResults && (
-          <div className="relative w-full mx-auto flex-1 min-h-0">
-            <img
-              src={receiptPreview}
-              alt="Receipt preview"
-              className="w-full h-full rounded-lg border border-border object-contain"
-            />
-          </div>
-        )}
-
-        {showResults && (
-          <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
-            {extractedProducts.length > 0 && (
-              <Button 
-                onClick={handleAutoSelect} 
-                className="w-full shrink-0" 
-                size="lg"
-              >
-                <Check className="h-4 w-4 mr-2" />
-                Auto-Select These Products
-              </Button>
-            )}
-
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg shrink-0">
-              <div className="flex items-center gap-2">
-                {extractedProducts.length > 0 ? (
-                  <>
-                    <Check className="h-5 w-5 text-green-600" />
-                    <span className="font-medium">
-                      Found {extractedProducts.length} product(s)
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium">No products found</span>
-                  </>
-                )}
-              </div>
+        {/* Right: Extracted Products */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Extracted Products</Label>
+          
+          {!showResults ? (
+            <div className="flex flex-col items-center justify-center h-64 border border-dashed border-border rounded-lg bg-muted/20">
+              <AlertCircle className="h-8 w-8 text-muted-foreground/50 mb-2" />
+              <span className="text-sm text-muted-foreground">Upload a receipt and click Extract</span>
             </div>
-
-            {receiptPreview && (
-              <div className="relative w-full mx-auto flex-1 min-h-0">
-                <img
-                  src={receiptPreview}
-                  alt="Receipt preview"
-                  className="w-full h-full rounded-lg border border-border object-contain"
-                />
-              </div>
-            )}
-
-            {extractedProducts.length > 0 && (
-              <div className="space-y-2 shrink-0 max-h-32 overflow-y-auto">
-                {extractedProducts.map((product, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between gap-2 p-2 bg-background rounded border border-border"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{product.name}</p>
-                      {product.sku && (
-                        <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-semibold px-2 py-1 bg-primary/10 text-primary rounded">
-                        x{product.quantity}
-                      </span>
-                      <Button
-                        onClick={() => handleRemoveProduct(index)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+          ) : extractedProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 border border-dashed border-border rounded-lg bg-muted/20">
+              <AlertCircle className="h-8 w-8 text-yellow-500 mb-2" />
+              <span className="text-sm text-muted-foreground">No products found in receipt</span>
+              <span className="text-xs text-muted-foreground/70 mt-1">Try a clearer image</span>
+            </div>
+          ) : (
+            <div className="h-64 overflow-y-auto border border-border rounded-lg p-2 space-y-2">
+              {extractedProducts.map((product, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-2 p-2 bg-background rounded-lg border border-border hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    {product.sku && (
+                      <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm font-semibold px-2 py-1 bg-primary/10 text-primary rounded">
+                      x{product.quantity}
+                    </span>
+                    <Button
+                      onClick={() => handleRemoveProduct(index)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Status Badge */}
+          {showResults && (
+            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+              {extractedProducts.length > 0 ? (
+                <>
+                  <Check className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium">
+                    Found {extractedProducts.length} product(s)
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm font-medium">No products found</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

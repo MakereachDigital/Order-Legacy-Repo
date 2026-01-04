@@ -13,7 +13,8 @@ import { EditModeToggle } from "@/components/EditModeToggle";
 import { EditModePanel } from "@/components/EditModePanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ImageIcon, Package, FileText, LogIn, LogOut } from "lucide-react";
+import { ImageIcon, Package, FileText, LogIn, LogOut, ArrowUpDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
@@ -32,6 +33,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("small");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<string>("default");
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedForEdit, setSelectedForEdit] = useState<string[]>([]);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
@@ -138,8 +140,38 @@ const Index = () => {
       );
     }
     
+    // Sort products
+    if (sortBy === "category") {
+      filtered = [...filtered].sort((a, b) => {
+        const catA = a.category || "zzz";
+        const catB = b.category || "zzz";
+        return catA.localeCompare(catB);
+      });
+    } else if (sortBy === "name") {
+      filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === "price") {
+      filtered = [...filtered].sort((a, b) => {
+        const priceA = parseFloat(a.price?.replace(/[^0-9.]/g, "") || "0");
+        const priceB = parseFloat(b.price?.replace(/[^0-9.]/g, "") || "0");
+        return priceA - priceB;
+      });
+    }
+    
     return filtered;
-  }, [products, searchQuery, selectedCategory]);
+  }, [products, searchQuery, selectedCategory, sortBy]);
+
+  // Group products by category for organized display
+  const groupedProducts = useMemo(() => {
+    if (sortBy !== "category" || selectedCategory) return null;
+    
+    const groups: Record<string, Product[]> = {};
+    filteredProducts.forEach((product) => {
+      const cat = product.category || "Other";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(product);
+    });
+    return groups;
+  }, [filteredProducts, sortBy, selectedCategory]);
 
   const handleToggleProduct = (product: Product) => {
     if (isEditMode) {
@@ -384,13 +416,25 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md">
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
-            </div>
+            {/* Search Bar - Compact */}
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
             
             {/* All Actions in One Row */}
             <div className="flex items-center gap-1.5 shrink-0">
+              {/* Sort Dropdown */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-9 w-[120px] rounded-xl border-border/60 bg-muted/50 text-xs font-medium">
+                  <ArrowUpDown className="h-3 w-3 mr-1" />
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="category">By Category</SelectItem>
+                  <SelectItem value="name">By Name</SelectItem>
+                  <SelectItem value="price">By Price</SelectItem>
+                </SelectContent>
+              </Select>
+              
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
               
               <CategoryFilter 
@@ -507,18 +551,43 @@ const Index = () => {
             <h3 className="text-lg font-semibold text-foreground mb-1">No products found</h3>
             <p className="text-sm text-muted-foreground">Try adjusting your search or add a custom product</p>
           </div>
+        ) : groupedProducts ? (
+          // Grouped by category display
+          <div className="container mx-auto px-4 py-6 space-y-8">
+            {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+              <div key={category} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-bold text-foreground">{category}</h2>
+                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {categoryProducts.length} items
+                  </span>
+                </div>
+                <ProductGrid
+                  products={categoryProducts}
+                  selectedProducts={selectedProducts}
+                  onToggleProduct={handleToggleProduct}
+                  onEditProduct={handleEditProduct}
+                  getSelectionNumbers={getSelectionNumbers}
+                  viewMode={viewMode}
+                  isEditMode={isEditMode}
+                  selectedForEdit={selectedForEdit}
+                  isAuthenticated={!!user}
+                />
+              </div>
+            ))}
+          </div>
         ) : (
-        <ProductGrid
-          products={filteredProducts}
-          selectedProducts={selectedProducts}
-          onToggleProduct={handleToggleProduct}
-          onEditProduct={handleEditProduct}
-          getSelectionNumbers={getSelectionNumbers}
-          viewMode={viewMode}
-          isEditMode={isEditMode}
-          selectedForEdit={selectedForEdit}
-          isAuthenticated={!!user}
-        />
+          <ProductGrid
+            products={filteredProducts}
+            selectedProducts={selectedProducts}
+            onToggleProduct={handleToggleProduct}
+            onEditProduct={handleEditProduct}
+            getSelectionNumbers={getSelectionNumbers}
+            viewMode={viewMode}
+            isEditMode={isEditMode}
+            selectedForEdit={selectedForEdit}
+            isAuthenticated={!!user}
+          />
         )}
       </main>
 

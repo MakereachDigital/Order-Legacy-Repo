@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
-import { AddProductDialog } from "@/components/AddProductDialog";
+// AddProductDialog removed - merged into ImportProductsDialog
 import { ReceiptUploader } from "@/components/ReceiptUploader";
 import { ImportProductsDialog } from "@/components/ImportProductsDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -372,55 +372,31 @@ const Index = () => {
       {/* Modern Sticky Header */}
       <header className="sticky top-0 z-50 glass-strong border-b border-border/50 shadow-soft">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             {/* Logo & Brand */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
               <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-glow">
                 <Package className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-base font-bold text-foreground leading-none tracking-tight">Legacy Dhaka</h1>
                 <p className="text-[11px] text-muted-foreground font-medium">Order Manager</p>
               </div>
             </div>
             
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            
+            {/* All Actions in One Row */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+              
               <CategoryFilter 
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
               />
-              <ThemeToggle />
-              {user ? (
-                <Button
-                  onClick={handleLogout}
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-xl"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => navigate("/auth")}
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-xl"
-                >
-                  <LogIn className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Search & Actions Bar */}
-      <div className="sticky top-[65px] z-40 glass border-b border-border/40">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
               
               {/* Receipt Button */}
               {!isEditMode && (
@@ -429,7 +405,7 @@ const Index = () => {
                     <TooltipTrigger asChild>
                       <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-xl">
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
                             <FileText className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
@@ -454,23 +430,26 @@ const Index = () => {
                 </TooltipProvider>
               )}
               
-              {/* Import Button - Extract from Links */}
+              {/* Add Product Button (includes Import options) */}
               {!isEditMode && isAdmin && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div>
-                        <ImportProductsDialog onImportProducts={handleImportProducts} />
+                        <ImportProductsDialog 
+                          onImportProducts={handleImportProducts} 
+                          onAddProduct={handleAddProduct}
+                        />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Import Products</p>
+                      <p>Add Product</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
               
-              {/* Edit Mode Toggle - beside Import */}
+              {/* Edit Mode Toggle */}
               {isAdmin && (
                 <EditModeToggle 
                   isEditMode={isEditMode}
@@ -480,11 +459,29 @@ const Index = () => {
                   }}
                 />
               )}
-            </div>
-            
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-              {!isEditMode && user && isAdmin && <AddProductDialog onAddProduct={handleAddProduct} />}
+              
+              <ThemeToggle />
+              
+              {user ? (
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => navigate("/auth")}
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl"
+                >
+                  <LogIn className="h-4 w-4" />
+                </Button>
+              )}
+              
               {!isEditMode && selectedProducts.length > 0 && (
                 <Button
                   onClick={handleClearSelection}
@@ -498,7 +495,7 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Product Grid */}
       <main className="pb-28 animate-fade-in">

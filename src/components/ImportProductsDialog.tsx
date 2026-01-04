@@ -4,22 +4,69 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Download, Loader2, X, FileSpreadsheet, Link } from "lucide-react";
+import { Plus, Loader2, X, FileSpreadsheet, Link, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ImportProductsDialogProps {
   onImportProducts: (products: Product[]) => void;
+  onAddProduct: (product: Product) => void;
 }
 
-export const ImportProductsDialog = ({ onImportProducts }: ImportProductsDialogProps) => {
+export const ImportProductsDialog = ({ onImportProducts, onAddProduct }: ImportProductsDialogProps) => {
   const [open, setOpen] = useState(false);
   const [urls, setUrls] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [extractedProducts, setExtractedProducts] = useState<Product[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Manual add product state
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [sku, setSku] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !imagePreview) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    const newProduct: Product = {
+      id: `custom-${Date.now()}`,
+      name,
+      image: imagePreview,
+      price: price || undefined,
+      sku: sku || undefined,
+    };
+
+    onAddProduct(newProduct);
+    toast.success("Product added successfully");
+    
+    // Reset form
+    setName("");
+    setPrice("");
+    setSku("");
+    setImageFile(null);
+    setImagePreview("");
+    setOpen(false);
+  };
 
   const handleImport = async () => {
     const urlList = urls
@@ -179,31 +226,119 @@ export const ImportProductsDialog = ({ onImportProducts }: ImportProductsDialogP
     setExtractedProducts((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const downloadCSVTemplate = () => {
+    const template = `name,sku,price,image,category
+"Product Name 1","SKU001","1499.00৳","https://example.com/image1.jpg","grocery"
+"Product Name 2","SKU002","2500.00৳","https://example.com/image2.jpg","dairy"`;
+    
+    const blob = new Blob([template], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "products_template.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("CSV template downloaded");
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8">
-          <Download className="h-4 w-4 mr-1" />
-          Import
+        <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl">
+          <Plus className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Import Products</DialogTitle>
+          <DialogTitle>Add Products</DialogTitle>
         </DialogHeader>
 
         {extractedProducts.length === 0 ? (
-          <Tabs defaultValue="urls" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="manual" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="manual" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Manual
+              </TabsTrigger>
               <TabsTrigger value="urls" className="flex items-center gap-2">
                 <Link className="h-4 w-4" />
                 From URLs
               </TabsTrigger>
               <TabsTrigger value="csv" className="flex items-center gap-2">
                 <FileSpreadsheet className="h-4 w-4" />
-                From CSV/Excel
+                From CSV
               </TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="manual" className="space-y-4 mt-4">
+              <form onSubmit={handleManualSubmit}>
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Product Name *</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter product name"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="price">Price</Label>
+                      <Input
+                        id="price"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        placeholder="e.g., 1,499.00৳"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="sku">SKU</Label>
+                      <Input
+                        id="sku"
+                        value={sku}
+                        onChange={(e) => setSku(e.target.value)}
+                        placeholder="e.g., OPC"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="image">Product Image *</Label>
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="cursor-pointer"
+                      />
+                      {imagePreview && (
+                        <div className="relative w-full h-32 rounded-md overflow-hidden border">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {!imagePreview && (
+                        <div className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-md">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Upload className="h-8 w-8" />
+                            <p className="text-sm">Upload image</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button type="submit">Add Product</Button>
+                </div>
+              </form>
+            </TabsContent>
             
             <TabsContent value="urls" className="space-y-4 mt-4">
               <div>
@@ -239,17 +374,26 @@ export const ImportProductsDialog = ({ onImportProducts }: ImportProductsDialogP
                     Importing...
                   </>
                 ) : (
-                  <>
-                    <Download className="mr-2 h-5 w-5" />
-                    Start Import
-                  </>
+                  "Start Import"
                 )}
               </Button>
             </TabsContent>
             
             <TabsContent value="csv" className="space-y-4 mt-4">
               <div className="space-y-3">
-                <Label>Upload CSV or Excel file</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Upload CSV file</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={downloadCSVTemplate}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Template
+                  </Button>
+                </div>
                 <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                   <FileSpreadsheet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground mb-4">
@@ -275,11 +419,9 @@ export const ImportProductsDialog = ({ onImportProducts }: ImportProductsDialogP
                 <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                   <p className="text-sm font-medium">Expected CSV columns:</p>
                   <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• <strong>name</strong> or <strong>product</strong> (required) - Product name</li>
-                    <li>• <strong>image</strong>, <strong>photo</strong>, or <strong>url</strong> - Image URL</li>
-                    <li>• <strong>price</strong> - Product price</li>
-                    <li>• <strong>sku</strong>, <strong>code</strong>, or <strong>id</strong> - Product SKU</li>
-                    <li>• <strong>category</strong> or <strong>type</strong> - Product category</li>
+                    <li>• <strong>name</strong> or <strong>product</strong> (required)</li>
+                    <li>• <strong>image</strong>, <strong>photo</strong>, or <strong>url</strong></li>
+                    <li>• <strong>price</strong>, <strong>sku</strong>, <strong>category</strong></li>
                   </ul>
                 </div>
               </div>

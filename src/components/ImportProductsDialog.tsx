@@ -246,8 +246,9 @@ export const ImportProductsDialog = ({ onImportProducts, onAddProduct }: ImportP
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl">
-          <Plus className="h-4 w-4" />
+        <Button variant="outline" className="h-9 rounded-xl gap-2 px-3 md:w-9 md:px-0">
+          <Plus className="h-4 w-4 shrink-0" />
+          <span className="md:hidden">Add Product</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">

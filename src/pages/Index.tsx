@@ -401,16 +401,145 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Modern Sticky Header */}
+      {/* Modern Sticky Header - Mobile Optimized */}
       <header className="sticky top-0 z-50 glass-strong border-b border-border/50 shadow-soft">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+          {/* Mobile Layout */}
+          <div className="flex md:hidden items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="bg-gradient-to-br from-primary to-accent p-1.5 rounded-lg shadow-glow">
+                <Package className="h-4 w-4 text-primary-foreground" />
+              </div>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            
+            <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+            
+            {/* Mobile Menu Button */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Menu</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  {/* Categories */}
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-muted-foreground">Categories</span>
+                    <CategoryFilter 
+                      selectedCategory={selectedCategory}
+                      onCategoryChange={setSelectedCategory}
+                    />
+                  </div>
+                  
+                  {/* Sort */}
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium text-muted-foreground">Sort By</span>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-full h-10 rounded-xl">
+                        <SelectValue placeholder="Sort by..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        <SelectItem value="category">By Category</SelectItem>
+                        <SelectItem value="name">By Name</SelectItem>
+                        <SelectItem value="price">By Price</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="space-y-2 pt-2 border-t border-border/50">
+                    {!isEditMode && (
+                      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="w-full justify-start gap-2 rounded-xl">
+                            <FileText className="h-4 w-4" />
+                            Upload Receipt
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-lg font-semibold">Smart Receipt Upload</DialogTitle>
+                          </DialogHeader>
+                          <ReceiptUploader
+                            onProductsExtracted={handleProductsExtracted}
+                            receiptFile={receiptFile}
+                            setReceiptFile={setReceiptFile}
+                            receiptPreview={receiptPreview}
+                            setReceiptPreview={setReceiptPreview}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    
+                    {!isEditMode && isAdmin && (
+                      <ImportProductsDialog 
+                        onImportProducts={handleImportProducts} 
+                        onAddProduct={handleAddProduct}
+                      />
+                    )}
+                    
+                    {isAdmin && (
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-sm font-medium">Edit Mode</span>
+                        <EditModeToggle 
+                          isEditMode={isEditMode}
+                          onToggle={() => {
+                            setIsEditMode(!isEditMode);
+                            setSelectedForEdit([]);
+                          }}
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm font-medium">Theme</span>
+                      <ThemeToggle />
+                    </div>
+                    
+                    {user ? (
+                      <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start gap-2 rounded-xl"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => navigate("/auth")}
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start gap-2 rounded-xl"
+                      >
+                        <LogIn className="h-4 w-4" />
+                        Login
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          {/* Desktop Layout */}
+          <div className="hidden md:flex items-center gap-3">
             {/* Logo & Brand */}
             <div className="flex items-center gap-3 shrink-0">
               <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-glow">
                 <Package className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div className="hidden sm:block">
+              <div>
                 <h1 className="text-base font-bold text-foreground leading-none tracking-tight">Legacy Dhaka</h1>
                 <p className="text-[11px] text-muted-foreground font-medium">Order Manager</p>
               </div>

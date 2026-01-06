@@ -33,7 +33,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("small");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<string>("default");
+  const [sortBy, setSortBy] = useState<string>("category");
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedForEdit, setSelectedForEdit] = useState<string[]>([]);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
@@ -140,12 +140,22 @@ const Index = () => {
       );
     }
     
+    // Category priority order: Cufflinks > Tie > Others (alphabetically)
+    const getCategoryPriority = (cat: string | undefined): number => {
+      const lowerCat = (cat || "").toLowerCase();
+      if (lowerCat === "cufflinks") return 0;
+      if (lowerCat === "tie") return 1;
+      return 2; // Others
+    };
+
     // Sort products
     if (sortBy === "category") {
       filtered = [...filtered].sort((a, b) => {
-        const catA = a.category || "zzz";
-        const catB = b.category || "zzz";
-        return catA.localeCompare(catB);
+        const priorityA = getCategoryPriority(a.category);
+        const priorityB = getCategoryPriority(b.category);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        // Within same priority, sort alphabetically by name
+        return a.name.localeCompare(b.name);
       });
     } else if (sortBy === "name") {
       filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
@@ -464,7 +474,6 @@ const Index = () => {
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Default</SelectItem>
                   <SelectItem value="category">By Category</SelectItem>
                   <SelectItem value="name">By Name</SelectItem>
                   <SelectItem value="price">By Price</SelectItem>
@@ -552,7 +561,6 @@ const Index = () => {
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Default</SelectItem>
                   <SelectItem value="category">By Category</SelectItem>
                   <SelectItem value="name">By Name</SelectItem>
                   <SelectItem value="price">By Price</SelectItem>

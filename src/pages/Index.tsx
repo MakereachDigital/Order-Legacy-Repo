@@ -13,8 +13,7 @@ import { EditModeToggle } from "@/components/EditModeToggle";
 import { EditModePanel } from "@/components/EditModePanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ImageIcon, Package, FileText, LogIn, LogOut, ArrowUpDown } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageIcon, Package, FileText, LogIn, LogOut } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
@@ -455,7 +454,7 @@ const Index = () => {
               )}
             </div>
             
-            {/* Row 2: View, Categories, Sort */}
+            {/* Row 2: View, Categories */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-thin">
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
               
@@ -465,20 +464,6 @@ const Index = () => {
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
               />
-              
-              <div className="h-6 w-px bg-border/50 shrink-0" />
-              
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-8 w-[100px] rounded-xl border-border/60 bg-muted/50 text-xs font-medium shrink-0">
-                  <ArrowUpDown className="h-3 w-3 mr-1" />
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="category">By Category</SelectItem>
-                  <SelectItem value="name">By Name</SelectItem>
-                  <SelectItem value="price">By Price</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             
             {/* Row 3: Action Buttons */}
@@ -486,7 +471,7 @@ const Index = () => {
               {!isEditMode && (
                 <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 rounded-xl gap-2 text-xs">
+                    <Button size="sm" className="h-9 rounded-xl gap-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90">
                       <FileText className="h-4 w-4" />
                       Receipt
                     </Button>
@@ -554,19 +539,6 @@ const Index = () => {
             
             {/* All Actions in One Row */}
             <div className="flex items-center gap-1.5 shrink-0">
-              {/* Sort Dropdown */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-9 w-[120px] rounded-xl border-border/60 bg-muted/50 text-xs font-medium">
-                  <ArrowUpDown className="h-3 w-3 mr-1" />
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="category">By Category</SelectItem>
-                  <SelectItem value="name">By Name</SelectItem>
-                  <SelectItem value="price">By Price</SelectItem>
-                </SelectContent>
-              </Select>
-              
               <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
               
               <CategoryFilter 

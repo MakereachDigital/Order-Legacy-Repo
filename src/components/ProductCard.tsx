@@ -2,7 +2,7 @@ import { Product } from "@/types/product";
 import { ViewMode } from "./ViewToggle";
 import { EditProductDialog } from "./EditProductDialog";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -28,16 +28,17 @@ export const ProductCard = ({
   const isListView = viewMode === "list";
   const isSelected = selectionNumbers.length > 0;
   const showHighlight = isEditMode ? isSelectedForEdit : isSelected;
+  const selectionCount = selectionNumbers.length;
   
   return (
     <div
       onClick={onToggle}
       className={cn(
         "group relative cursor-pointer rounded-xl overflow-hidden transition-all duration-300",
-        "bg-card border hover-lift",
+        "bg-card border",
         showHighlight
-          ? "ring-2 ring-primary shadow-glow border-primary" 
-          : "border-border/60 hover:border-primary/40 hover:shadow-soft-lg",
+          ? "ring-2 ring-primary shadow-glow border-primary scale-[0.98]" 
+          : "border-border/60 hover:border-primary/40 hover:shadow-soft-lg hover:-translate-y-0.5",
         isListView && "flex flex-row items-center"
       )}
     >
@@ -50,7 +51,10 @@ export const ProductCard = ({
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className={cn(
+            "w-full h-full object-cover transition-transform duration-500",
+            showHighlight ? "scale-105" : "group-hover:scale-105"
+          )}
           loading="lazy"
         />
         
@@ -63,18 +67,33 @@ export const ProductCard = ({
           </div>
         )}
         
-        {/* Selection numbers overlay */}
+        {/* Selection badge - Premium style */}
         {!isEditMode && isSelected && (
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent">
-            <div className="absolute top-2 right-2 flex flex-wrap gap-1 max-w-[80%] justify-end">
-              {selectionNumbers.map((num) => (
-                <div 
-                  key={num}
-                  className="bg-primary text-primary-foreground rounded-full min-w-[26px] h-[26px] flex items-center justify-center text-xs font-bold shadow-glow animate-scale-in px-1.5"
-                >
-                  {num}
-                </div>
-              ))}
+          <>
+            {/* Subtle overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/15 via-transparent to-primary/5 pointer-events-none" />
+            
+            {/* Selection count badge - Top right corner */}
+            <div className={cn(
+              "absolute top-2 right-2 z-10",
+              "min-w-[28px] h-7 px-2",
+              "bg-primary text-primary-foreground",
+              "rounded-full font-bold text-sm",
+              "flex items-center justify-center gap-1",
+              "shadow-glow animate-scale-in",
+              "border-2 border-background"
+            )}>
+              {selectionCount > 1 && <span>×</span>}
+              {selectionCount}
+            </div>
+          </>
+        )}
+
+        {/* Add indicator on hover when not selected */}
+        {!isEditMode && !isSelected && (
+          <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-300 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-300 shadow-glow">
+              <Plus className="h-5 w-5" />
             </div>
           </div>
         )}

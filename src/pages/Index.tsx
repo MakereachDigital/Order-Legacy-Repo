@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
-// AddProductDialog removed - merged into ImportProductsDialog
 import { ReceiptUploader } from "@/components/ReceiptUploader";
 import { ImportProductsDialog } from "@/components/ImportProductsDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -11,9 +10,10 @@ import { ViewToggle, ViewMode } from "@/components/ViewToggle";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { EditModeToggle } from "@/components/EditModeToggle";
 import { EditModePanel } from "@/components/EditModePanel";
+import { SelectionBar } from "@/components/SelectionBar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ImageIcon, Package, FileText, LogIn, LogOut } from "lucide-react";
+import { Package, FileText, LogIn, LogOut } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
@@ -707,46 +707,14 @@ const Index = () => {
         />
       )}
 
-      {/* Bottom Action Bar with Thumbnails */}
-      {!isEditMode && selectedProducts.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-border/50 shadow-soft-lg animate-slide-up">
-          <div className="container mx-auto px-4 py-4 space-y-3">
-            {/* Thumbnail Strip */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {selectedProducts.map((product, index) => (
-              <div
-                key={index}
-                onClick={() => handleRemoveSelection(index)}
-                className="relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 border-primary/60 cursor-pointer hover:border-destructive hover:scale-95 transition-all duration-200 shadow-soft"
-              >
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-                {product.sku && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[7px] font-bold text-center py-0.5 truncate px-0.5">
-                    {product.sku}
-                  </div>
-                )}
-                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] rounded-bl-lg flex items-center justify-center px-1">
-                  {index + 1}
-                </div>
-              </div>
-            ))}
-            </div>
-            
-            {/* Generate Button */}
-            <Button
-              onClick={handleGenerateImage}
-              className="w-full h-12 text-base font-semibold shadow-glow hover:shadow-glow-lg transition-all duration-300"
-              size="lg"
-            >
-              <ImageIcon className="mr-2 h-5 w-5" />
-              Generate Order Image ({selectedProducts.length} items)
-            </Button>
-          </div>
-        </div>
+      {/* Selection Bar */}
+      {!isEditMode && (
+        <SelectionBar
+          selectedProducts={selectedProducts}
+          onRemoveSelection={handleRemoveSelection}
+          onGenerateImage={handleGenerateImage}
+          onClearSelection={handleClearSelection}
+        />
       )}
 
       {/* Order Image Generator Modal */}

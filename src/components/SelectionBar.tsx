@@ -106,21 +106,33 @@ export const SelectionBar = ({
           </div>
         </div>
 
-        {/* Generate button - Premium style */}
-        <Button
-          onClick={onGenerateImage}
-          size="lg"
-          className={cn(
-            "w-full h-12 sm:h-14 text-sm sm:text-base font-semibold",
-            "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90",
-            "shadow-glow hover:shadow-glow-lg",
-            "transition-all duration-300 ease-out",
-            "rounded-xl"
-          )}
-        >
-          <ImageIcon className="mr-2 h-5 w-5" />
-          Generate Order Image
-        </Button>
+        {/* Generate button - Premium style with gradient glow */}
+        <div className="relative group/btn">
+          {/* Animated glow background */}
+          <div className={cn(
+            "absolute -inset-0.5 rounded-xl opacity-75 blur-md transition-all duration-500",
+            "bg-gradient-to-r from-primary via-accent to-primary",
+            "group-hover/btn:opacity-100 group-hover/btn:blur-lg group-hover/btn:-inset-1",
+            "animate-[pulse_2s_ease-in-out_infinite]"
+          )} />
+          
+          <Button
+            onClick={onGenerateImage}
+            size="lg"
+            className={cn(
+              "relative w-full h-12 sm:h-14 text-sm sm:text-base font-bold",
+              "bg-gradient-to-r from-primary via-primary to-accent",
+              "hover:from-primary/95 hover:via-accent/90 hover:to-primary/95",
+              "shadow-glow hover:shadow-glow-lg",
+              "transition-all duration-300 ease-out",
+              "rounded-xl border border-primary-foreground/10",
+              "group-hover/btn:scale-[1.01]"
+            )}
+          >
+            <ImageIcon className="mr-2 h-5 w-5" />
+            Generate Order Image
+          </Button>
+        </div>
       </div>
     </div>
   );

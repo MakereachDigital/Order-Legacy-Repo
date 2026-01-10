@@ -110,10 +110,9 @@ export const SelectionBar = ({
         <div className="relative group/btn">
           {/* Animated glow background */}
           <div className={cn(
-            "absolute -inset-0.5 rounded-xl opacity-75 blur-md transition-all duration-500",
+            "absolute -inset-0.5 rounded-xl opacity-60 blur-md transition-all duration-300",
             "bg-gradient-to-r from-primary via-accent to-primary",
-            "group-hover/btn:opacity-100 group-hover/btn:blur-lg group-hover/btn:-inset-1",
-            "animate-[pulse_2s_ease-in-out_infinite]"
+            "group-hover/btn:opacity-90 group-hover/btn:blur-lg group-hover/btn:-inset-1"
           )} />
           
           <Button

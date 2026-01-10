@@ -59,12 +59,7 @@ export const ProductCard = ({
           loading="lazy"
         />
         
-        {/* Blue tint overlay on hover */}
-        <div className={cn(
-          "absolute inset-0 pointer-events-none transition-all duration-300 ease-out",
-          "bg-gradient-to-br from-primary/0 via-primary/0 to-primary/0",
-          !showHighlight && "group-hover:from-primary/15 group-hover:via-primary/10 group-hover:to-primary/20"
-        )} />
+        
         
         {/* Edit mode selection overlay */}
         {isEditMode && isSelectedForEdit && (

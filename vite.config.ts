@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
         description: 'Mobile-friendly product picker for delivery teams',
         theme_color: '#213594',
         background_color: '#0f1218',
-        display: 'standalone',
+        display: 'fullscreen',
         orientation: 'portrait',
         start_url: '/',
         scope: '/',

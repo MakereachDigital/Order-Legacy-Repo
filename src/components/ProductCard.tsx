@@ -51,7 +51,7 @@ export const ProductCard = ({
         isListView ? "w-24 h-24 flex-shrink-0" : "aspect-square"
       )}>
         <img
-          src={product.image}
+          src={getProxiedImageUrl(product.image)}
           alt={product.name}
           className={cn(
             "w-full h-full object-cover transition-all duration-500 ease-out",

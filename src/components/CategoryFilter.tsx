@@ -8,7 +8,7 @@ interface CategoryFilterProps {
 }
 
 export const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterProps) => {
-  const categories = ["Cufflinks", "Ties"];
+  const categories = ["Cufflinks", "Ties", "Scarfs", "Lapel Pins"];
 
   return (
     <div className="flex items-center gap-0.5 bg-secondary/80 rounded-xl p-0.5 border border-primary/20 shadow-sm">

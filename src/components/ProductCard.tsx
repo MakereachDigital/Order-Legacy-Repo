@@ -2,6 +2,7 @@ import { Product } from "@/types/product";
 import { ViewMode } from "./ViewToggle";
 import { EditProductDialog } from "./EditProductDialog";
 import { cn } from "@/lib/utils";
+import { getProxiedImageUrl } from "@/lib/imageProxy";
 import { Check, Plus } from "lucide-react";
 
 interface ProductCardProps {

@@ -528,11 +528,11 @@ const Index = () => {
           <div className="hidden md:flex items-center gap-3">
             {/* Logo & Brand */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-glow">
+              <div className="bg-gradient-to-br from-primary to-accent p-2.5 rounded-xl shadow-[0_0_24px_-4px_hsl(var(--primary)/0.5)]">
                 <Package className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-foreground leading-none tracking-tight">Legacy Dhaka</h1>
+                <h1 className="text-base font-bold text-foreground leading-none tracking-tight font-display">LEGACY DHAKA</h1>
                 <p className="text-[11px] text-muted-foreground font-medium">Order Manager</p>
               </div>
             </div>

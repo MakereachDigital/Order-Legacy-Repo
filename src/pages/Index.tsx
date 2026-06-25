@@ -409,23 +409,20 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Ambient glow backdrop */}
-      <div className="fixed inset-0 ambient-glow pointer-events-none -z-0" aria-hidden />
-
-      {/* Floating Glass Header */}
-      <header className="sticky top-0 md:top-4 z-50 px-2 sm:px-4 pt-2 md:pt-0">
-        <div className="container mx-auto glass-pill rounded-2xl md:rounded-3xl px-3 sm:px-4 py-3 sm:py-4 shadow-[0_8px_40px_-12px_hsl(173_80%_30%_/_0.25)]">
+    <div className="min-h-screen bg-background">
+      {/* Modern Sticky Header - Expanded */}
+      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 shadow-soft">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           {/* Mobile Layout - Multi-row expanded */}
           <div className="flex md:hidden flex-col gap-3">
             {/* Row 1: Logo, Search, Theme & Auth */}
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 shrink-0">
-                <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-[0_0_20px_-2px_hsl(var(--primary)/0.4)]">
+                <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-glow">
                   <Package className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-sm font-bold text-foreground leading-none font-display tracking-tight">LEGACY DHAKA</h1>
+                  <h1 className="text-sm font-bold text-foreground leading-none">Legacy Dhaka</h1>
                   <p className="text-[10px] text-muted-foreground">Order Manager</p>
                 </div>
               </div>
@@ -528,11 +525,11 @@ const Index = () => {
           <div className="hidden md:flex items-center gap-3">
             {/* Logo & Brand */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="bg-gradient-to-br from-primary to-accent p-2.5 rounded-xl shadow-[0_0_24px_-4px_hsl(var(--primary)/0.5)]">
+              <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-glow">
                 <Package className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-foreground leading-none tracking-tight font-display">LEGACY DHAKA</h1>
+                <h1 className="text-base font-bold text-foreground leading-none tracking-tight">Legacy Dhaka</h1>
                 <p className="text-[11px] text-muted-foreground font-medium">Order Manager</p>
               </div>
             </div>
@@ -649,28 +646,25 @@ const Index = () => {
       </header>
 
       {/* Product Grid */}
-      <main className="pb-28 animate-fade-in relative">
+      <main className="pb-28 animate-fade-in">
         {filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-4">
-            <div className="p-4 rounded-2xl glass mb-4">
+            <div className="p-4 rounded-2xl bg-muted/50 mb-4">
               <Package className="h-12 w-12 text-muted-foreground/50" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1 font-display">No products found</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-1">No products found</h3>
             <p className="text-sm text-muted-foreground">Try adjusting your search or add a custom product</p>
           </div>
         ) : groupedProducts ? (
           // Grouped by category display
-          <div className="container mx-auto px-4 py-8 space-y-12">
+          <div className="container mx-auto px-4 py-6 space-y-8">
             {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
-              <section key={category} className="space-y-5">
-                <div className="flex items-end justify-between px-1">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-display">{category}</h2>
-                    <span className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-wider uppercase">
-                      {categoryProducts.length} items
-                    </span>
-                  </div>
-                  <div className="hidden sm:block flex-1 mx-6 h-px bg-gradient-to-r from-primary/30 via-border to-transparent" />
+              <div key={category} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-bold text-foreground">{category}</h2>
+                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {categoryProducts.length} items
+                  </span>
                 </div>
                 <ProductGrid
                   products={categoryProducts}
@@ -683,7 +677,7 @@ const Index = () => {
                   selectedForEdit={selectedForEdit}
                   isAuthenticated={!!user}
                 />
-              </section>
+              </div>
             ))}
           </div>
         ) : (

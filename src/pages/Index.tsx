@@ -649,25 +649,28 @@ const Index = () => {
       </header>
 
       {/* Product Grid */}
-      <main className="pb-28 animate-fade-in">
+      <main className="pb-28 animate-fade-in relative">
         {filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-4">
-            <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+            <div className="p-4 rounded-2xl glass mb-4">
               <Package className="h-12 w-12 text-muted-foreground/50" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">No products found</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-1 font-display">No products found</h3>
             <p className="text-sm text-muted-foreground">Try adjusting your search or add a custom product</p>
           </div>
         ) : groupedProducts ? (
           // Grouped by category display
-          <div className="container mx-auto px-4 py-6 space-y-8">
+          <div className="container mx-auto px-4 py-8 space-y-12">
             {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
-              <div key={category} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-bold text-foreground">{category}</h2>
-                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    {categoryProducts.length} items
-                  </span>
+              <section key={category} className="space-y-5">
+                <div className="flex items-end justify-between px-1">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-display">{category}</h2>
+                    <span className="px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-wider uppercase">
+                      {categoryProducts.length} items
+                    </span>
+                  </div>
+                  <div className="hidden sm:block flex-1 mx-6 h-px bg-gradient-to-r from-primary/30 via-border to-transparent" />
                 </div>
                 <ProductGrid
                   products={categoryProducts}
@@ -680,7 +683,7 @@ const Index = () => {
                   selectedForEdit={selectedForEdit}
                   isAuthenticated={!!user}
                 />
-              </div>
+              </section>
             ))}
           </div>
         ) : (

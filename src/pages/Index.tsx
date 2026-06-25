@@ -409,10 +409,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Modern Sticky Header - Expanded */}
-      <header className="sticky top-0 z-50 glass-strong border-b border-border/50 shadow-soft">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+    <div className="min-h-screen bg-background relative">
+      {/* Ambient glow backdrop */}
+      <div className="fixed inset-0 ambient-glow pointer-events-none -z-0" aria-hidden />
+
+      {/* Floating Glass Header */}
+      <header className="sticky top-0 md:top-4 z-50 px-2 sm:px-4 pt-2 md:pt-0">
+        <div className="container mx-auto glass-pill rounded-2xl md:rounded-3xl px-3 sm:px-4 py-3 sm:py-4 shadow-[0_8px_40px_-12px_hsl(173_80%_30%_/_0.25)]">
           {/* Mobile Layout - Multi-row expanded */}
           <div className="flex md:hidden flex-col gap-3">
             {/* Row 1: Logo, Search, Theme & Auth */}

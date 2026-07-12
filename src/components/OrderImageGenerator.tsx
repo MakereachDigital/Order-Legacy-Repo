@@ -230,24 +230,37 @@ export const OrderImageGenerator = ({
     onClose();
   };
 
-  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File size must be less than 10MB");
-        return;
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    const valid = files.filter((f) => {
+      if (f.size > 10 * 1024 * 1024) {
+        toast.error(`${f.name}: File size must be less than 10MB`);
+        return false;
       }
-      setReceiptFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setReceiptPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-      toast.success("Receipt attached!");
-    }
+      return true;
+    });
+
+    const newItems: ReceiptItem[] = await Promise.all(
+      valid.map(async (file) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        preview: await readFileAsDataUrl(file),
+        status: "done" as const,
+      }))
+    );
+
+    setReceipts((prev) => [...prev, ...newItems]);
+    if (newItems.length > 0) toast.success(`${newItems.length} receipt(s) attached!`);
   };
 
-  const handleWhatsAppShare = async () => {
+  const removeReceipt = (id: string) => {
+    setReceipts((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const shareVia = async (target: "whatsapp" | "messenger") => {
     if (!imageUrl) {
       toast.error("Image not ready yet");
       return;
@@ -258,109 +271,53 @@ export const OrderImageGenerator = ({
       const blob = await response.blob();
       const orderFile = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
 
-      const files = [orderFile];
-      if (receiptFile) {
-        files.push(receiptFile);
-      }
+      const files: File[] = [orderFile, ...receipts.map((r) => r.file)];
 
-      // Try Web Share API first (works on mobile and some desktop browsers)
       if (navigator.share && navigator.canShare({ files })) {
         await navigator.share({
           files,
-          title: receiptFile ? "Order & Receipt" : "Order Image",
-          text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
+          title: receipts.length > 0 ? "Order & Receipts" : "Order Image",
+          text: `Order: ${selectedProducts.map((p) => p.name).join(", ")}`,
         });
-        toast.success("Sharing to WhatsApp...");
+        toast.success(`Sharing to ${target === "whatsapp" ? "WhatsApp" : "Messenger"}...`);
         onResetSelection();
         onClose();
       } else {
-        // Desktop fallback: Download images and open WhatsApp Web
-        const link = document.createElement("a");
-        link.download = `order-${Date.now()}.png`;
-        link.href = imageUrl;
-        link.click();
-        
-        if (receiptFile) {
+        // Desktop fallback: download all then open target
+        const orderLink = document.createElement("a");
+        orderLink.download = `order-${Date.now()}.png`;
+        orderLink.href = imageUrl;
+        orderLink.click();
+
+        receipts.forEach((r, i) => {
           setTimeout(() => {
-            const receiptLink = document.createElement("a");
-            receiptLink.download = receiptFile.name;
-            receiptLink.href = URL.createObjectURL(receiptFile);
-            receiptLink.click();
-          }, 300);
-        }
-        
-        // Small delay to ensure download starts
+            const rLink = document.createElement("a");
+            rLink.download = r.file.name;
+            rLink.href = URL.createObjectURL(r.file);
+            rLink.click();
+          }, 300 * (i + 1));
+        });
+
         setTimeout(() => {
-          const text = `Order: ${selectedProducts.map(p => p.name).join(", ")}`;
-          const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-          window.open(whatsappUrl, "_blank");
-          toast.success("Images downloaded! Please attach them in WhatsApp");
+          if (target === "whatsapp") {
+            const text = `Order: ${selectedProducts.map((p) => p.name).join(", ")}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+          } else {
+            window.open("https://www.facebook.com/messages/t/", "_blank");
+          }
+          toast.success("Files downloaded! Please attach them manually.");
           onResetSelection();
           onClose();
-        }, 700);
+        }, 300 * (receipts.length + 1) + 400);
       }
     } catch (error) {
-      console.error("Error sharing to WhatsApp:", error);
+      console.error(`Error sharing to ${target}:`, error);
       toast.error("Failed to share. Please try the download button.");
     }
   };
 
-  const handleMessengerShare = async () => {
-    if (!imageUrl) {
-      toast.error("Image not ready yet");
-      return;
-    }
-
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const orderFile = new File([blob], `order-${Date.now()}.png`, { type: "image/png" });
-
-      const files = [orderFile];
-      if (receiptFile) {
-        files.push(receiptFile);
-      }
-
-      // Try Web Share API first (works on mobile and some desktop browsers)
-      if (navigator.share && navigator.canShare({ files })) {
-        await navigator.share({
-          files,
-          title: receiptFile ? "Order & Receipt" : "Order Image",
-          text: `Order: ${selectedProducts.map(p => p.name).join(", ")}`,
-        });
-        toast.success("Sharing to Messenger...");
-        onResetSelection();
-        onClose();
-      } else {
-        // Desktop fallback: Download images and open Messenger
-        const link = document.createElement("a");
-        link.download = `order-${Date.now()}.png`;
-        link.href = imageUrl;
-        link.click();
-        
-        if (receiptFile) {
-          setTimeout(() => {
-            const receiptLink = document.createElement("a");
-            receiptLink.download = receiptFile.name;
-            receiptLink.href = URL.createObjectURL(receiptFile);
-            receiptLink.click();
-          }, 300);
-        }
-        
-        // Small delay to ensure download starts
-        setTimeout(() => {
-          const messengerUrl = `https://www.facebook.com/messages/t/`;
-          window.open(messengerUrl, "_blank");
-          toast.success("Images downloaded! Please attach them in Messenger");
-          onResetSelection();
-          onClose();
-        }, 700);
-      }
-    } catch (error) {
-      console.error("Error sharing to Messenger:", error);
-      toast.error("Failed to share. Please try the download button.");
-    }
-  };
+  const handleWhatsAppShare = () => shareVia("whatsapp");
+  const handleMessengerShare = () => shareVia("messenger");
 
   return (
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
@@ -374,7 +331,7 @@ export const OrderImageGenerator = ({
         </div>
 
         {/* Image preview */}
-        <div className="flex-1 flex items-center justify-center overflow-auto gap-4">
+        <div className="flex-1 flex flex-col md:flex-row items-center justify-center overflow-auto gap-4">
           {isGenerating ? (
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -385,21 +342,40 @@ export const OrderImageGenerator = ({
               <div className="flex flex-col items-center gap-2">
                 <Label className="text-sm text-muted-foreground">Order Image</Label>
                 {imageUrl && (
-                  <img 
-                    src={imageUrl} 
-                    alt="Order preview" 
+                  <img
+                    src={imageUrl}
+                    alt="Order preview"
                     className="max-w-full max-h-[400px] rounded-lg shadow-xl"
                   />
                 )}
               </div>
-              {receiptPreview && (
-                <div className="flex flex-col items-center gap-2">
-                  <Label className="text-sm text-muted-foreground">Receipt</Label>
-                  <img 
-                    src={receiptPreview} 
-                    alt="Receipt preview" 
-                    className="max-w-full max-h-[400px] rounded-lg shadow-xl"
-                  />
+              {receipts.length > 0 && (
+                <div className="flex flex-col items-center gap-2 max-w-full">
+                  <Label className="text-sm text-muted-foreground">
+                    Receipts ({receipts.length})
+                  </Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[400px] overflow-y-auto p-1">
+                    {receipts.map((r) => (
+                      <div
+                        key={r.id}
+                        className="relative w-24 h-24 rounded-lg overflow-hidden shadow-md group"
+                      >
+                        <img
+                          src={r.preview}
+                          alt="Receipt"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeReceipt(r.id)}
+                          className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 hover:bg-destructive hover:text-destructive-foreground transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100"
+                          aria-label="Remove receipt"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </>
@@ -411,22 +387,20 @@ export const OrderImageGenerator = ({
           {/* Receipt Upload */}
           <div className="flex flex-col gap-2 p-4 border border-border rounded-lg bg-card">
             <Label htmlFor="receipt-upload" className="text-sm font-medium">
-              Attach Receipt (Optional)
+              Attach Receipts (Optional) — you can pick multiple
             </Label>
             <div className="flex items-center gap-2">
               <Input
                 id="receipt-upload"
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleReceiptUpload}
                 className="flex-1"
               />
-              {receiptFile && (
+              {receipts.length > 0 && (
                 <Button
-                  onClick={() => {
-                    setReceiptFile(null);
-                    setReceiptPreview("");
-                  }}
+                  onClick={() => setReceipts([])}
                   variant="ghost"
                   size="sm"
                 >
@@ -435,8 +409,8 @@ export const OrderImageGenerator = ({
               )}
             </div>
           </div>
-          <Button 
-            onClick={handleDownload} 
+          <Button
+            onClick={handleDownload}
             className="w-full"
             size="lg"
             disabled={isGenerating || !imageUrl}
@@ -445,8 +419,8 @@ export const OrderImageGenerator = ({
             Download
           </Button>
           <div className="flex gap-3">
-            <Button 
-              onClick={handleWhatsAppShare} 
+            <Button
+              onClick={handleWhatsAppShare}
               className="flex-1"
               size="lg"
               variant="secondary"
@@ -455,8 +429,8 @@ export const OrderImageGenerator = ({
               <Send className="mr-2 h-5 w-5" />
               WhatsApp
             </Button>
-            <Button 
-              onClick={handleMessengerShare} 
+            <Button
+              onClick={handleMessengerShare}
               className="flex-1"
               size="lg"
               variant="secondary"

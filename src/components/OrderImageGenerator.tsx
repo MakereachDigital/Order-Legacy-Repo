@@ -1,49 +1,52 @@
 import { useRef, useEffect, useState } from "react";
 import { Product } from "@/types/product";
-import { Download, X, MessageCircle, Send, Loader2 } from "lucide-react";
+import { Download, X, MessageCircle, Send, Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { upscaleImage, needsUpscaling } from "@/lib/imageUpscaler";
+import type { ReceiptItem } from "./ReceiptUploader";
 
 interface OrderImageGeneratorProps {
   selectedProducts: Product[];
   onClose: () => void;
   onResetSelection: () => void;
-  initialReceiptFile?: File | null;
-  initialReceiptPreview?: string;
+  initialReceipts?: ReceiptItem[];
 }
 
-export const OrderImageGenerator = ({ 
-  selectedProducts, 
+const readFileAsDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+
+export const OrderImageGenerator = ({
+  selectedProducts,
   onClose,
   onResetSelection,
-  initialReceiptFile,
-  initialReceiptPreview 
+  initialReceipts,
 }: OrderImageGeneratorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [receiptFile, setReceiptFile] = useState<File | null>(initialReceiptFile || null);
-  const [receiptPreview, setReceiptPreview] = useState<string>(initialReceiptPreview || "");
+  const [receipts, setReceipts] = useState<ReceiptItem[]>(initialReceipts || []);
 
   useEffect(() => {
     if (selectedProducts.length > 0) {
       generateOrderImage();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProducts]);
 
   useEffect(() => {
-    // Auto-populate receipt if provided
-    if (initialReceiptFile) {
-      setReceiptFile(initialReceiptFile);
+    if (initialReceipts && initialReceipts.length > 0) {
+      setReceipts(initialReceipts);
     }
-    if (initialReceiptPreview) {
-      setReceiptPreview(initialReceiptPreview);
-    }
-  }, [initialReceiptFile, initialReceiptPreview]);
+  }, [initialReceipts]);
 
   const generateOrderImage = async () => {
     const canvas = canvasRef.current;

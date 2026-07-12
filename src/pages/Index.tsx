@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
-import { ReceiptUploader } from "@/components/ReceiptUploader";
+import { ReceiptUploader, type ReceiptItem } from "@/components/ReceiptUploader";
 import { ImportProductsDialog } from "@/components/ImportProductsDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
@@ -36,8 +36,7 @@ const Index = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedForEdit, setSelectedForEdit] = useState<string[]>([]);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [receiptPreview, setReceiptPreview] = useState<string>("");
+  const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
 
   const loadPermissions = useCallback(async () => {
     try {
@@ -482,10 +481,8 @@ const Index = () => {
                     </DialogHeader>
                     <ReceiptUploader
                       onProductsExtracted={handleProductsExtracted}
-                      receiptFile={receiptFile}
-                      setReceiptFile={setReceiptFile}
-                      receiptPreview={receiptPreview}
-                      setReceiptPreview={setReceiptPreview}
+                      receipts={receipts}
+                      setReceipts={setReceipts}
                     />
                   </DialogContent>
                 </Dialog>
@@ -563,10 +560,8 @@ const Index = () => {
                           </DialogHeader>
                           <ReceiptUploader
                             onProductsExtracted={handleProductsExtracted}
-                            receiptFile={receiptFile}
-                            setReceiptFile={setReceiptFile}
-                            receiptPreview={receiptPreview}
-                            setReceiptPreview={setReceiptPreview}
+                            receipts={receipts}
+                            setReceipts={setReceipts}
                           />
                         </DialogContent>
                       </Dialog>
@@ -724,12 +719,10 @@ const Index = () => {
           onClose={() => {
             setShowGenerator(false);
             setGeneratorProducts([]);
-            setReceiptFile(null);
-            setReceiptPreview("");
+            setReceipts([]);
           }}
           onResetSelection={() => setSelectedProducts([])}
-          initialReceiptFile={receiptFile}
-          initialReceiptPreview={receiptPreview}
+          initialReceipts={receipts}
         />
       )}
     </div>

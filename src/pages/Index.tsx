@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
-import { ReceiptUploader, type ReceiptItem } from "@/components/ReceiptUploader";
+import { ReceiptUploader, type ReceiptItem, type ReceiptGroup } from "@/components/ReceiptUploader";
 import { ImportProductsDialog } from "@/components/ImportProductsDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";

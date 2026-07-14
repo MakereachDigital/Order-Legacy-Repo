@@ -69,7 +69,7 @@ export const ReceiptUploader = ({
       )
     );
 
-    const allProducts: ExtractedProduct[] = [];
+    
 
     const results = await Promise.all(
       batch.map(async (item) => {

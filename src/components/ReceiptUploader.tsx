@@ -21,11 +21,17 @@ export interface ReceiptItem {
   productsCount?: number;
 }
 
+export interface ReceiptGroup {
+  receiptId: string;
+  products: ExtractedProduct[];
+}
+
 interface ReceiptUploaderProps {
-  onProductsExtracted: (products: ExtractedProduct[]) => void;
+  onProductsExtracted: (groups: ReceiptGroup[]) => void;
   receipts: ReceiptItem[];
   setReceipts: React.Dispatch<React.SetStateAction<ReceiptItem[]>>;
 }
+
 
 const readFileAsDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -93,20 +99,23 @@ export const ReceiptUploader = ({
       })
     );
 
-    results.forEach((res) => {
-      if (res.ok) allProducts.push(...res.products);
-    });
+    const okGroups: ReceiptGroup[] = results
+      .filter((r) => r.ok)
+      .map((r) => ({ receiptId: r.id, products: r.products }));
+
+    const totalProducts = okGroups.reduce((sum, g) => sum + g.products.length, 0);
 
     setIsProcessing(false);
 
-    if (allProducts.length === 0) {
+    if (totalProducts === 0) {
       const anyOk = results.some((r) => r.ok);
       toast.error(anyOk ? "No products found in receipts" : "Failed to extract receipts");
     } else {
-      toast.success(`Found ${allProducts.length} product(s) across ${batch.length} receipt(s)!`);
-      onProductsExtracted(allProducts);
+      toast.success(`Found ${totalProducts} product(s) across ${batch.length} receipt(s)!`);
+      onProductsExtracted(okGroups);
     }
   };
+
 
   const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);

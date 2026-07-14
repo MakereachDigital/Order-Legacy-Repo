@@ -313,19 +313,21 @@ export const OrderImageGenerator = ({
                   )}
                 </div>
 
-                <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
-                  <img
-                    src={r.imageUrl}
-                    alt={`Order ${i + 1} preview`}
-                    className="max-w-full max-h-[360px] rounded-lg shadow-xl"
-                  />
+                <div className="flex flex-col md:flex-row items-start justify-center gap-4 w-full">
+                  <div className="flex-1 min-w-0 flex justify-center">
+                    <img
+                      src={r.imageUrl}
+                      alt={`Order ${i + 1} preview`}
+                      className="max-w-full max-h-[360px] rounded-lg shadow-xl object-contain"
+                    />
+                  </div>
                   {r.receipt && (
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-1 shrink-0 w-[160px] md:w-[180px]">
                       <Label className="text-[11px] text-muted-foreground">Receipt</Label>
                       <img
                         src={r.receipt.preview}
                         alt="Receipt"
-                        className="max-h-[220px] rounded-lg shadow-md"
+                        className="w-full h-auto max-h-[260px] object-contain rounded-lg shadow-md border border-border/40"
                       />
                     </div>
                   )}

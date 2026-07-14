@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ProductGrid } from "@/components/ProductGrid";
 import { OrderImageGenerator } from "@/components/OrderImageGenerator";
 import { SearchBar } from "@/components/SearchBar";
-import { ReceiptUploader, type ReceiptItem } from "@/components/ReceiptUploader";
+import { ReceiptUploader, type ReceiptItem, type ReceiptGroup } from "@/components/ReceiptUploader";
 import { ImportProductsDialog } from "@/components/ImportProductsDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ViewToggle, ViewMode } from "@/components/ViewToggle";
@@ -27,7 +27,7 @@ const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const [generatorProducts, setGeneratorProducts] = useState<Product[]>([]);
+  const [orderGroups, setOrderGroups] = useState<Array<{ id: string; products: Product[]; receipt?: ReceiptItem }>>([]);
   const [showGenerator, setShowGenerator] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("small");
@@ -37,6 +37,7 @@ const Index = () => {
   const [selectedForEdit, setSelectedForEdit] = useState<string[]>([]);
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
+
 
   const loadPermissions = useCallback(async () => {
     try {
@@ -204,10 +205,11 @@ const Index = () => {
       toast.error("Please select at least one product");
       return;
     }
-    setGeneratorProducts([...selectedProducts]);
+    setOrderGroups([{ id: "manual", products: [...selectedProducts] }]);
     setShowGenerator(true);
     setSelectedProducts([]);
   };
+
 
   const handleClearSelection = () => {
     setSelectedProducts([]);
@@ -350,53 +352,53 @@ const Index = () => {
     }
   };
 
-  const handleProductsExtracted = (extractedProducts: Array<{ sku: string; name: string; quantity: number }>) => {
-    const newSelectedProducts: Product[] = [];
+  const handleProductsExtracted = (groups: ReceiptGroup[]) => {
     const notFoundProducts: string[] = [];
+    const builtGroups: Array<{ id: string; products: Product[]; receipt?: ReceiptItem }> = [];
+    let totalMatched = 0;
 
-    extractedProducts.forEach(extracted => {
-      let matchedProduct: Product | undefined = undefined;
-      
-      // Try to find by SKU first (highest priority) - if SKU exists in extracted data
-      if (extracted.sku) {
-        matchedProduct = products.find(p => 
-          p.sku && p.sku.toLowerCase() === extracted.sku.toLowerCase()
-        );
-      }
+    groups.forEach((group) => {
+      const groupProducts: Product[] = [];
 
-      // If no SKU match, try fuzzy name matching
-      if (!matchedProduct && extracted.name) {
-        const searchName = extracted.name.toLowerCase().trim();
-        // Try exact match first
-        matchedProduct = products.find(p => 
-          p.name.toLowerCase().trim() === searchName
-        );
-        
-        // Try partial match if no exact match
-        if (!matchedProduct) {
-          matchedProduct = products.find(p => {
-            const productName = p.name.toLowerCase().trim();
-            return productName.includes(searchName) || searchName.includes(productName);
-          });
+      group.products.forEach((extracted) => {
+        let matchedProduct: Product | undefined;
+
+        if (extracted.sku) {
+          matchedProduct = products.find(
+            (p) => p.sku && p.sku.toLowerCase() === extracted.sku.toLowerCase()
+          );
         }
-      }
 
-      if (matchedProduct) {
-        // Add the product once with quantity info
-        newSelectedProducts.push({ ...matchedProduct, quantity: extracted.quantity });
-      } else {
-        notFoundProducts.push(`${extracted.name || 'Unknown'} (${extracted.sku || 'No SKU'})`);
+        if (!matchedProduct && extracted.name) {
+          const searchName = extracted.name.toLowerCase().trim();
+          matchedProduct = products.find((p) => p.name.toLowerCase().trim() === searchName);
+
+          if (!matchedProduct) {
+            matchedProduct = products.find((p) => {
+              const productName = p.name.toLowerCase().trim();
+              return productName.includes(searchName) || searchName.includes(productName);
+            });
+          }
+        }
+
+        if (matchedProduct) {
+          groupProducts.push({ ...matchedProduct, quantity: extracted.quantity });
+        } else {
+          notFoundProducts.push(`${extracted.name || "Unknown"} (${extracted.sku || "No SKU"})`);
+        }
+      });
+
+      if (groupProducts.length > 0) {
+        const receipt = receipts.find((r) => r.id === group.receiptId);
+        builtGroups.push({ id: group.receiptId, products: groupProducts, receipt });
+        totalMatched += groupProducts.length;
       }
     });
 
-    if (newSelectedProducts.length > 0) {
-      setSelectedProducts(prev => [...prev, ...newSelectedProducts]);
-      toast.success(`Added ${newSelectedProducts.length} product(s) to order`);
-      
-      // Close receipt dialog and auto-open generator with receipt attached
+    if (builtGroups.length > 0) {
+      toast.success(`Matched ${totalMatched} product(s) across ${builtGroups.length} receipt(s)`);
       setShowReceiptDialog(false);
-      // Set generator products BEFORE showing generator
-      setGeneratorProducts(newSelectedProducts);
+      setOrderGroups(builtGroups);
       setTimeout(() => {
         setShowGenerator(true);
       }, 300);
@@ -406,6 +408,7 @@ const Index = () => {
       toast.error(`Could not find: ${notFoundProducts.join(", ")}`);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -715,16 +718,16 @@ const Index = () => {
       {/* Order Image Generator Modal */}
       {showGenerator && (
         <OrderImageGenerator
-          selectedProducts={generatorProducts}
+          orders={orderGroups}
           onClose={() => {
             setShowGenerator(false);
-            setGeneratorProducts([]);
+            setOrderGroups([]);
             setReceipts([]);
           }}
           onResetSelection={() => setSelectedProducts([])}
-          initialReceipts={receipts}
         />
       )}
+
     </div>
   );
 };

@@ -208,6 +208,56 @@ export const OrderImageGenerator = ({
     return files;
   };
 
+  const downloadOne = async (r: RenderedOrder, index: number) => {
+    const link = document.createElement("a");
+    link.download = `order-${index + 1}-${Date.now()}.png`;
+    link.href = r.imageUrl;
+    link.click();
+    toast.success(`Downloading order ${index + 1}`);
+  };
+
+  const shareOne = async (r: RenderedOrder, index: number, target: "whatsapp" | "messenger") => {
+    try {
+      const response = await fetch(r.imageUrl);
+      const blob = await response.blob();
+      const files: File[] = [
+        new File([blob], `order-${index + 1}-${Date.now()}.png`, { type: "image/png" }),
+      ];
+      if (r.receipt) files.push(r.receipt.file);
+
+      const names = r.products.map((p) => p.name).join(", ");
+
+      if (navigator.share && navigator.canShare({ files })) {
+        await navigator.share({
+          files,
+          title: `Order ${index + 1}`,
+          text: `Order ${index + 1}: ${names}`,
+        });
+        toast.success(`Sharing order ${index + 1} to ${target === "whatsapp" ? "WhatsApp" : "Messenger"}...`);
+      } else {
+        files.forEach((f, i) => {
+          setTimeout(() => {
+            const link = document.createElement("a");
+            link.download = f.name;
+            link.href = URL.createObjectURL(f);
+            link.click();
+          }, i * 300);
+        });
+        setTimeout(() => {
+          if (target === "whatsapp") {
+            window.open(`https://wa.me/?text=${encodeURIComponent(`Order ${index + 1}: ${names}`)}`, "_blank");
+          } else {
+            window.open("https://www.facebook.com/messages/t/", "_blank");
+          }
+          toast.success("Files downloaded! Please attach them manually.");
+        }, files.length * 300 + 400);
+      }
+    } catch (error) {
+      console.error(`Error sharing order ${index + 1}:`, error);
+      toast.error("Failed to share. Please try the download button.");
+    }
+  };
+
   const handleDownload = async () => {
     if (rendered.length === 0) {
       toast.error("Images not ready yet");
@@ -331,6 +381,36 @@ export const OrderImageGenerator = ({
                       />
                     </div>
                   )}
+                </div>
+
+                {/* Per-order actions */}
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-3"
+                    onClick={() => downloadOne(r, i)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 h-9"
+                    onClick={() => shareOne(r, i, "whatsapp")}
+                  >
+                    <Send className="mr-1.5 h-4 w-4" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 h-9"
+                    onClick={() => shareOne(r, i, "messenger")}
+                  >
+                    <MessageCircle className="mr-1.5 h-4 w-4" />
+                    Messenger
+                  </Button>
                 </div>
               </div>
             ))

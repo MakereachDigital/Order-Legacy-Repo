@@ -357,7 +357,14 @@ const Index = () => {
     const builtGroups: Array<{ id: string; products: Product[]; receipt?: ReceiptItem }> = [];
     let totalMatched = 0;
 
-    groups.forEach((group) => {
+    // Keep groups in the same sequence the receipts appear in the uploader
+    const orderedGroups = [...groups].sort(
+      (a, b) =>
+        receipts.findIndex((r) => r.id === a.receiptId) -
+        receipts.findIndex((r) => r.id === b.receiptId)
+    );
+
+    orderedGroups.forEach((group) => {
       const groupProducts: Product[] = [];
 
       group.products.forEach((extracted) => {

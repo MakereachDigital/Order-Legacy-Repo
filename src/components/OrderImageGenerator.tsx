@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Product } from "@/types/product";
-import { Download, X, MessageCircle, Send, Loader2 } from "lucide-react";
+import { Download, X, MessageCircle, Send, Loader2, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { toast } from "sonner";

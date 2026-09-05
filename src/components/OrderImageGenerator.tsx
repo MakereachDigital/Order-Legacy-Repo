@@ -382,6 +382,36 @@ export const OrderImageGenerator = ({
                     </div>
                   )}
                 </div>
+
+                {/* Per-order actions */}
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-3"
+                    onClick={() => downloadOne(r, i)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 h-9"
+                    onClick={() => shareOne(r, i, "whatsapp")}
+                  >
+                    <Send className="mr-1.5 h-4 w-4" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 h-9"
+                    onClick={() => shareOne(r, i, "messenger")}
+                  >
+                    <MessageCircle className="mr-1.5 h-4 w-4" />
+                    Messenger
+                  </Button>
+                </div>
               </div>
             ))
           )}
